@@ -73,7 +73,7 @@ jobs:
       - name: Checkout previous QA version for upgrade baseline
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.sha || github.event.before || 'qa/playwright-allure-ci' }}
+          ref: ${{ github.event.pull_request.base.sha || github.event.before || '1639d92a467d505644948338539de66b81d836f9' }}
           path: baseline
           fetch-depth: 0
       - name: Build and sign previous-version APK
