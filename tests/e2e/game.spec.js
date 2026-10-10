@@ -43,7 +43,7 @@ test('pause menu can open, switch chapters, and resume', async ({ page }) => {
   await expect(page.locator('#chapterDrawer')).toHaveClass(/open/);
   await page.getByRole('button', { name: 'CHAPTER 3' }).click();
   await expect(page.locator('#chapterLabel')).toContainText('Chapter 3');
-  await page.getByRole('button', { name: /MENU/ }).click();
+  await page.getByRole('button', { name: /menu/i }).click();
   await page.getByRole('button', { name: 'RESUME GAME' }).click();
   await expect(page.locator('#chapterDrawer')).not.toHaveClass(/open/);
 });
