@@ -125,7 +125,7 @@ document.getElementById('openChapterMenu').addEventListener('click',()=>{
 });
 document.getElementById('closeChapterMenu').addEventListener('click',()=>{
  document.getElementById('chapterDrawer').classList.remove('open');
- if(launched){setImmersiveChrome(true);scheduleChromeHide()}
+ if(launched)setImmersiveChrome(true);
 });
 document.getElementById('exitImmersiveMode').addEventListener('click',()=>{
  document.getElementById('chapterDrawer').classList.remove('open');
@@ -136,7 +136,7 @@ document.querySelectorAll('#chapterDrawer [data-chapter]').forEach(button=>{
   launched=true;intro.style.display='none';
   loadChapter(Number(button.dataset.chapter));
   document.getElementById('chapterDrawer').classList.remove('open');
-  setImmersiveChrome(true);scheduleChromeHide();
+  setImmersiveChrome(true);
  });
 });
 select.addEventListener('change',()=>{if(!launched){launched=true;intro.style.display='none'}loadChapter(Number(select.value))});
