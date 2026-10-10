@@ -171,3 +171,20 @@ test('forest chapters render flower patches and contain no tree drawing loops', 
     expect(script).not.toMatch(/for\s*\(\s*(?:const|let)\s+\w+\s+of\s+trees\s*\)/);
   }
 });
+
+
+test('starting the adventure wakes the browser audio engine for audible music', async ({ page }) => {
+  await page.getByRole('button', { name: 'START THE ADVENTURE' }).click();
+  await expect(page.frameLocator('#gameFrame').locator('body')).toBeVisible();
+  const status = await page.evaluate(async () => {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return { supported: false, state: 'unsupported' };
+    const ctx = new Ctx();
+    await ctx.resume();
+    const state = ctx.state;
+    await ctx.close();
+    return { supported: true, state };
+  });
+  expect(status.supported).toBe(true);
+  expect(status.state).toBe('running');
+});
