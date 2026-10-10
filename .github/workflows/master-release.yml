@@ -7,19 +7,12 @@ on:
       - qa/playwright-allure-ci
     paths:
       - "app/**"
-      - "tests/**"
-      - "package.json"
-      - "package-lock.json"
-      - "playwright.config.js"
       - ".github/workflows/**"
   push:
     branches:
       - qa/playwright-allure-ci
     paths:
       - "app/**"
-      - "tests/**"
-      - "package.json"
-      - "package-lock.json"
       - ".github/workflows/**"
 
 permissions:
@@ -35,8 +28,7 @@ jobs:
     uses: ./.github/workflows/build-signed-apk.yml
     secrets: inherit
 
-  # Emulator upgrade testing is intentionally disabled to keep release delivery unblocked.
-  # The signed APK is still built, verified, and uploaded by signed-release.
+  # UI automation runs separately in playwright-qa.yml and must not gate APK release.
 
   master-summary:
     name: Master release status
@@ -48,14 +40,13 @@ jobs:
       - name: Report pipeline result
         env:
           RELEASE_RESULT: ${{ needs.signed-release.result }}
-          UPGRADE_RESULT: "skipped"
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           {
             echo "## THE TREASURE — Master Release Pipeline"
             echo
             echo "- Signed APK release: **${RELEASE_RESULT}**"
-            echo "- APK install/upgrade test: **disabled by request**"
+            echo "- UI automation: **separate workflow; not a release gate**"
             echo
             if [ "${RELEASE_RESULT}" = "success" ]; then
               echo "### Result: SUCCESS"
