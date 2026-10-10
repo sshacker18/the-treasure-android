@@ -56,6 +56,28 @@ jobs:
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
 
+      - name: Build release APK (unsigned)
+        run: gradle assembleRelease --no-daemon
+
+      - name: Build Android App Bundle (unsigned)
+        run: gradle bundleRelease --no-daemon
+
+      - name: Upload Play bundle candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: the-treasure-release-bundle-unsigned
+          path: app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload release APK (unsigned)
+        uses: actions/upload-artifact@v4
+        with:
+          name: the-treasure-release-apk-unsigned
+          path: app/build/outputs/apk/release/app-release-unsigned.apk
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
