@@ -1,10 +1,6 @@
-name: Playwright Game QA
+name: Playwright Game QA (standalone)
 
 on:
-  push:
-    branches: [main, "qa/**"]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -14,29 +10,44 @@ jobs:
   browser-qa:
     name: Playwright gameplay and responsive QA
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
+      - name: Set up Java for Allure
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
       - name: Install QA dependencies
         run: npm install --no-audit --no-fund
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Prepare report directories
-        run: mkdir -p test-results/artifacts
+        run: mkdir -p test-results/artifacts allure-results
       - name: Run Playwright tests
         run: npm run test:e2e
-      - name: Upload Playwright reports, traces and screenshots
+      - name: Generate Allure HTML report
+        if: always()
+        run: |
+          if [ -d allure-results ] && find allure-results -type f -print -quit | grep -q .; then
+            npx allure generate allure-results --clean -o allure-report || echo "Allure HTML generation failed; raw results will still be uploaded."
+          else
+            echo "No Allure result files were produced."
+          fi
+      - name: Upload QA evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: the-treasure-playwright-qa-report
           path: |
             playwright-report/
+            allure-results/
+            allure-report/
             test-results/
           if-no-files-found: warn
           retention-days: 14
