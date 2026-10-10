@@ -270,7 +270,7 @@ jobs:
           msg = EmailMessage()
           msg["Subject"] = subject
           msg["From"] = username
-          msg["To"] = username
+          msg["To"] = ", ".join([username, "sahith888111@proton.me"])
           msg.set_content(f"THE TREASURE Run #{run_number}\nOverall: {overall}\nPlaywright QA: {qa}\nAndroid build: {android}\nTests total={total}, passed={passed}, failed={failed}, skipped={skipped}\nFull logs and artifacts: {run_url}")
           msg.add_alternative(body, subtype="html")
           for file in junit_files[:1]:
