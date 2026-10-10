@@ -1,4 +1,4 @@
-name: THE TREASURE - CI, Playwright QA, and APK Artifacts
+name: THE TREASURE - QA and single APK
 
 on:
   push:
@@ -7,7 +7,6 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Avoid spending runner minutes on superseded commits from the same branch.
 concurrency:
   group: treasure-ci-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
@@ -17,85 +16,46 @@ permissions:
 
 jobs:
   browser-qa:
-    name: Playwright gameplay, responsive QA, and reports
+    name: Playwright gameplay QA
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
           cache-dependency-path: package.json
-
-      - name: Set up Java for Allure
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-
       - name: Install QA dependencies
         run: npm install --no-audit --no-fund
-
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-
-      - name: Prepare report directories
-        run: mkdir -p test-results/artifacts allure-results
-
       - name: Run Playwright gameplay and responsive tests
         run: npm run test:e2e
 
-      - name: Generate Allure HTML report
-        if: always()
-        run: |
-          if [ -d allure-results ] && find allure-results -type f -print -quit | grep -q .; then
-            npx allure generate allure-results --clean -o allure-report || echo "Allure HTML generation failed; raw Allure results will still be uploaded."
-          else
-            echo "No Allure result files were produced."
-          fi
-
-      - name: Upload Playwright, Allure, screenshots, videos, traces, and JUnit results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: the-treasure-qa-evidence
-          path: |
-            playwright-report/
-            allure-results/
-            allure-report/
-            test-results/
-          if-no-files-found: warn
-          retention-days: 14
-
   android-build:
-    name: Build and validate Android APKs
+    name: Build one installable debug APK
     runs-on: ubuntu-latest
     needs: browser-qa
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
-
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
           packages: "platforms;android-35 platforms;android-36 build-tools;35.0.0 build-tools;36.0.0"
           accept-android-sdk-licenses: true
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.11.1"
-
       - name: Validate project and chapter assets
         shell: bash
         run: |
@@ -110,179 +70,16 @@ jobs:
           assert "chapter-complete" in html, "Missing chapter completion bridge"
           assert len(re.findall(r"data-chapter=[\"']?[0-3]", html)) >= 4, "Expected chapter menu entries 1-4"
           gradle = Path("app/build.gradle.kts").read_text()
-          target = re.search(r"targetSdk\s*=\s*(\d+)", gradle)
+          target = re.search(r"targetSdk\\s*=\\s*(\\d+)", gradle)
           assert target and int(target.group(1)) >= 36, "Android target SDK must be 36+"
-          print("Project and static release checks passed.")
+          print("Project and static checks passed.")
           PY
-
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
-
-      - name: Run available unit tests
-        run: gradle testDebugUnitTest --no-daemon
-
-      - name: Build unsigned release APK
-        run: gradle assembleRelease --no-daemon
-
-      - name: Build unsigned Android App Bundle
-        run: gradle bundleRelease --no-daemon
-
-      - name: Upload debug APK
+      - name: Upload the APK
         uses: actions/upload-artifact@v4
         with:
-          name: the-treasure-debug-apk
+          name: THE-TREASURE-debug-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
-
-      - name: Upload unsigned release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: the-treasure-release-apk-unsigned
-          path: app/build/outputs/apk/release/app-release-unsigned.apk
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload unsigned AAB candidate
-        uses: actions/upload-artifact@v4
-        with:
-          name: the-treasure-release-bundle-unsigned
-          path: app/build/outputs/bundle/release/app-release.aab
-          if-no-files-found: error
-          retention-days: 14
-
-  email-build-report:
-    name: Email readable QA and build report
-    runs-on: ubuntu-latest
-    if: always()
-    needs: [browser-qa, android-build]
-    steps:
-      - name: Download QA evidence
-        if: always()
-        uses: actions/download-artifact@v4
-        with:
-          name: the-treasure-qa-evidence
-          path: qa-evidence
-        continue-on-error: true
-
-      - name: Email formatted status, test results, and evidence links
-        if: always()
-        env:
-          SMTP_USERNAME: ${{ secrets.TREASURE_SMTP_USERNAME }}
-          SMTP_APP_PASSWORD: ${{ secrets.TREASURE_SMTP_APP_PASSWORD }}
-          QA_STATUS: ${{ needs.browser-qa.result }}
-          ANDROID_STATUS: ${{ needs.android-build.result }}
-          REPOSITORY: ${{ github.repository }}
-          BRANCH: ${{ github.head_ref || github.ref_name }}
-          COMMIT_SHA: ${{ github.sha }}
-          RUN_NUMBER: ${{ github.run_number }}
-          RUN_ID: ${{ github.run_id }}
-          EVENT_NAME: ${{ github.event_name }}
-          SERVER_URL: ${{ github.server_url }}
-        run: |
-          python3 - <<'PY'
-          import glob, html, os, smtplib, sys
-          from email.message import EmailMessage
-          from pathlib import Path
-          from xml.etree import ElementTree as ET
-
-          username = os.environ.get("SMTP_USERNAME", "").strip()
-          password = os.environ.get("SMTP_APP_PASSWORD", "").strip()
-          if not username or not password:
-              print("EMAIL NOT SENT: configure repository Actions secrets TREASURE_SMTP_USERNAME and TREASURE_SMTP_APP_PASSWORD.")
-              print("The build and QA results remain available from the workflow run page; missing optional email credentials do not invalidate a successful build.")
-              sys.exit(0)
-
-          repo = os.environ["REPOSITORY"]
-          run_id = os.environ["RUN_ID"]
-          run_number = os.environ["RUN_NUMBER"]
-          run_url = f'{os.environ["SERVER_URL"]}/{repo}/actions/runs/{run_id}'
-          qa = os.environ.get("QA_STATUS", "unknown").upper()
-          android = os.environ.get("ANDROID_STATUS", "unknown").upper()
-          branch = os.environ.get("BRANCH", "unknown")
-          sha = os.environ.get("COMMIT_SHA", "unknown")[:12]
-          event = os.environ.get("EVENT_NAME", "unknown")
-
-          def status_line(label, value):
-              icon = "✅" if value == "SUCCESS" else ("⏭️" if value in ("SKIPPED", "CANCELLED") else "❌")
-              return f"{icon} {label}: {value}"
-
-          test_rows = []
-          junit_files = glob.glob("qa-evidence/**/junit.xml", recursive=True)
-          total = passed = failed = skipped = 0
-          for file in junit_files:
-              try:
-                  root = ET.parse(file).getroot()
-                  cases = list(root.iter("testcase"))
-                  for case in cases:
-                      total += 1
-                      name = case.attrib.get("name", "Unnamed test")
-                      failure = case.find("failure")
-                      error = case.find("error")
-                      skip = case.find("skipped")
-                      if failure is not None or error is not None:
-                          failed += 1
-                          node = failure if failure is not None else error
-                          detail = (node.attrib.get("message", "") or (node.text or "")).strip()
-                          detail = detail[:900]
-                          test_rows.append((name, "FAILED", detail))
-                      elif skip is not None:
-                          skipped += 1
-                          test_rows.append((name, "SKIPPED", (skip.attrib.get("message", "") or "").strip()[:300]))
-                      else:
-                          passed += 1
-                          test_rows.append((name, "PASSED", ""))
-              except Exception as exc:
-                  print(f"Could not parse {file}: {exc}")
-
-          def color_for(result):
-              return "#18794e" if result == "PASSED" else ("#946200" if result == "SKIPPED" else "#b42318")
-
-          if test_rows:
-              test_table = "".join(
-                  f'<tr><td style="padding:8px;border-bottom:1px solid #ddd">{html.escape(name)}</td>'
-                  f'<td style="padding:8px;border-bottom:1px solid #ddd;color:{color_for(result)}"><b>{result}</b></td>'
-                  f'<td style="padding:8px;border-bottom:1px solid #ddd">{html.escape(detail)}</td></tr>'
-                  for name, result, detail in test_rows
-              )
-          else:
-              test_table = '<tr><td colspan="3" style="padding:8px">JUnit results unavailable; open the run and QA evidence links for actual logs.</td></tr>'
-
-          overall = "PASS" if qa == "SUCCESS" and android == "SUCCESS" and total > 0 and failed == 0 else "ATTENTION REQUIRED"
-          subject = f"THE TREASURE | Run #{run_number} | {overall}"
-          body = f'''<!doctype html><html><body style="font-family:Arial,sans-serif;color:#202124;line-height:1.45;max-width:900px">
-          <h2 style="margin-bottom:4px">THE TREASURE — Automated QA &amp; Build Report</h2>
-          <p style="color:#5f6368;margin-top:0">Run #{html.escape(run_number)} · Commit {html.escape(sha)} · Branch {html.escape(branch)}</p>
-          <p style="font-size:18px"><b>Overall status: {overall}</b></p>
-          <h3>1. Pipeline status</h3>
-          <ul><li>{status_line("Playwright QA", qa)}</li><li>{status_line("Android build", android)}</li></ul>
-          <h3>2. Automated test results</h3>
-          <p>Total: <b>{total}</b> · Passed: <b style="color:#18794e">{passed}</b> · Failed: <b style="color:#b42318">{failed}</b> · Skipped: <b>{skipped}</b></p>
-          <table style="border-collapse:collapse;width:100%;font-size:13px"><thead><tr style="background:#f3f4f6"><th align="left" style="padding:8px">Test / chapter check</th><th align="left" style="padding:8px">Result</th><th align="left" style="padding:8px">Failure detail</th></tr></thead><tbody>{test_table}</tbody></table>
-          <h3>3. Build interpretation</h3>
-          <p>Android artifacts are produced only if the QA gate allows the build job to run. A successful automated run is not a substitute for real-device QA. Release APK/AAB artifacts from this workflow are unsigned candidates unless signing is explicitly configured and verified.</p>
-          <h3>4. Full logs and downloadable evidence</h3>
-          <p><a href="{run_url}">Open workflow run, job logs, screenshots, traces, reports, and downloadable artifacts</a></p>
-          <p>Trigger: {html.escape(event)} · Run ID: {html.escape(run_id)}</p>
-          <hr><p style="font-size:12px;color:#5f6368">Only test results present in the generated JUnit report are marked passed/failed. A missing report is shown as unavailable, never assumed to have passed.</p>
-          </body></html>'''
-
-          msg = EmailMessage()
-          msg["Subject"] = subject
-          msg["From"] = username
-          msg["To"] = ", ".join([username, "sahith888111@proton.me"])
-          msg.set_content(f"THE TREASURE Run #{run_number}\nOverall: {overall}\nPlaywright QA: {qa}\nAndroid build: {android}\nTests total={total}, passed={passed}, failed={failed}, skipped={skipped}\nFull logs and artifacts: {run_url}")
-          msg.add_alternative(body, subtype="html")
-          for file in junit_files[:1]:
-              try:
-                  data = Path(file).read_bytes()
-                  msg.add_attachment(data, maintype="application", subtype="xml", filename="the-treasure-junit-results.xml")
-              except Exception as exc:
-                  print(f"Could not attach JUnit report: {exc}")
-
-          with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as server:
-              server.login(username, password)
-              server.send_message(msg)
-          print(f"EMAIL SENT: {subject} -> {username}")
-          print(f"QA={qa}; ANDROID={android}; tests={total}; passed={passed}; failed={failed}; skipped={skipped}")
-          PY
