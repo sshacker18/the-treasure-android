@@ -47,16 +47,16 @@ test('Chapter 1 starts and exposes movement and interaction controls', async ({ 
   await expect(game.getByRole('button', { name: 'INTERACT' })).toBeVisible();
 });
 
-test('all four chapters load, start, and expose playable touch controls', async ({ page }) => {
-  await startAdventure(page);
-  const starts = {
-    1: 'ENTER THE FOREST',
-    2: 'BEGIN CHAPTER 2',
-    3: 'DESCEND INTO THE ARCHIVE',
-    4: 'ENTER THE HEART CHAMBER'
-  };
-  for (const chapter of [1, 2, 3, 4]) {
-    if (chapter > 1 || chapter === 1) await chooseChapter(page, chapter);
+for (const chapter of [1, 2, 3, 4]) {
+  test(`Chapter ${chapter} loads, starts, and exposes playable touch controls`, async ({ page }) => {
+    await startAdventure(page);
+    await chooseChapter(page, chapter);
+    const starts = {
+      1: 'ENTER THE FOREST',
+      2: 'BEGIN CHAPTER 2',
+      3: 'DESCEND INTO THE ARCHIVE',
+      4: 'ENTER THE HEART CHAMBER'
+    };
     const game = page.frameLocator('#gameFrame');
     await expect(game.locator('canvas')).toBeVisible();
     await game.getByRole('button', { name: starts[chapter], exact: true }).click();
@@ -68,9 +68,8 @@ test('all four chapters load, start, and expose playable touch controls', async 
       await expect(game.locator('#' + control)).toBeVisible();
     }
     await expect(game.locator('#' + (chapter === 1 ? 'interact' : 'act'))).toBeVisible();
-  }
-});
-
+  });
+}
 test('immersive gameplay keeps shell bars hidden and overlays compact controls on the canvas', async ({ page }) => {
   await page.setViewportSize({ width: 844, height: 390 });
   await startAdventure(page);
