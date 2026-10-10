@@ -1,0 +1,13 @@
+{
+  "name": "the-treasure-qa",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Automated browser QA for THE TREASURE Android WebView game",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0"
+  }
+}
