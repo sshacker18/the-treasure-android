@@ -26,8 +26,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: treasure-master-${{ github.ref }}
-  cancel-in-progress: true
+  group: treasure-master-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
 
 jobs:
   gameplay-qa:
