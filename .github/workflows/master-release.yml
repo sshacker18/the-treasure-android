@@ -10,6 +10,7 @@ on:
       - "tests/**"
       - "package.json"
       - "package-lock.json"
+      - "playwright.config.js"
       - ".github/workflows/**"
   push:
     branches:
