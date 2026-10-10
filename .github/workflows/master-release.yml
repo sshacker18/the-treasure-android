@@ -2,6 +2,15 @@ name: THE TREASURE - Master Release Pipeline
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - qa/playwright-allure-ci
+    paths:
+      - "app/**"
+      - "tests/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/**"
   push:
     branches:
       - qa/playwright-allure-ci
