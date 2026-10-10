@@ -10,6 +10,7 @@ on:
       - "tests/**"
       - "package.json"
       - "package-lock.json"
+      - "playwright.config.js"
       - ".github/workflows/**"
   push:
     branches:
@@ -25,19 +26,138 @@ permissions:
   contents: read
 
 concurrency:
-  group: treasure-master-${{ github.ref }}
-  cancel-in-progress: true
+  group: treasure-master-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
 
 jobs:
   gameplay-qa:
     name: Child 1 - Playwright QA and report
     uses: ./.github/workflows/playwright-qa.yml
 
+  edge-case-qa:
+    name: Child 4 - Gameplay edge-case regression suite
+    runs-on: ubuntu-latest
+    needs: gameplay-qa
+    timeout-minutes: 20
+    steps:
+      - name: Checkout tested PR commit
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: package.json
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Run edge-case Playwright suite
+        run: npx playwright test tests/e2e/edge-cases.spec.js
+      - name: Upload edge-case evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THE-TREASURE-edge-case-evidence
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
   signed-release:
     name: Child 2 - Build, sign, and publish APK
-    needs: gameplay-qa
+    needs: [gameplay-qa, edge-case-qa]
     uses: ./.github/workflows/build-signed-apk.yml
     secrets: inherit
+
+  apk-upgrade-test:
+    name: Child 3 - APK install and upgrade test
+    needs: signed-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platforms;android-35 platforms;android-36 build-tools;35.0.0 build-tools;36.0.0"
+          accept-android-sdk-licenses: true
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      - name: Download signed APK from this master run
+        uses: actions/download-artifact@v4
+        with:
+          name: THE-TREASURE-signed-APK
+          path: release-apk
+      - name: Validate APK metadata and signing certificate
+        run: |
+          set -euo pipefail
+          APK=release-apk/THE-TREASURE.apk
+          test -s "$APK"
+          SDK="$ANDROID_HOME/build-tools/36.0.0"
+          "$SDK/apksigner" verify --verbose "$APK"
+          "$SDK/apksigner" verify --print-certs "$APK" | tee release-apk/new-certificate.txt
+          "$SDK/aapt" dump badging "$APK" | tee release-apk/apk-metadata.txt
+          grep -q "package: name='com.thetreasure.game'" release-apk/apk-metadata.txt
+          grep -q "versionCode='4'" release-apk/apk-metadata.txt
+      - name: Checkout previous QA version for upgrade baseline
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.event.before || 'qa/playwright-allure-ci' }}
+          path: baseline
+          fetch-depth: 0
+      - name: Build and sign previous-version APK
+        env:
+          SIGNING_CONFIG: ${{ secrets.TREASURE_QA_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          gradle -p baseline assembleDebug --no-daemon
+          printf '%s' "$SIGNING_CONFIG" | jq -j '.keystore_base64' | base64 --decode > "$RUNNER_TEMP/treasure-qa.jks"
+          KEYSTORE_PASSWORD="$(printf '%s' "$SIGNING_CONFIG" | jq -j '.keystore_password')"
+          KEY_ALIAS="$(printf '%s' "$SIGNING_CONFIG" | jq -j '.key_alias')"
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -f -p 4 baseline/app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/baseline-aligned.apk"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$RUNNER_TEMP/treasure-qa.jks" --ks-key-alias "$KEY_ALIAS" --ks-pass "pass:$KEYSTORE_PASSWORD" --out release-apk/THE-TREASURE-previous.apk "$RUNNER_TEMP/baseline-aligned.apk"
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging release-apk/THE-TREASURE-previous.apk | tee release-apk/previous-apk-metadata.txt
+          grep -q "package: name='com.thetreasure.game'" release-apk/previous-apk-metadata.txt
+          grep -q "versionCode='3'" release-apk/previous-apk-metadata.txt
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs release-apk/THE-TREASURE-previous.apk | tee release-apk/previous-certificate.txt
+          OLD_CERT="$(sed -n 's/.*certificate SHA-256 digest: //p' release-apk/previous-certificate.txt | head -n1)"
+          NEW_CERT="$(sed -n 's/.*certificate SHA-256 digest: //p' release-apk/new-certificate.txt | head -n1)"
+          test -n "$OLD_CERT" && test "$OLD_CERT" = "$NEW_CERT" || { echo "Signing certificate mismatch; Android in-place update would fail."; exit 1; }
+          unset SIGNING_CONFIG KEYSTORE_PASSWORD KEY_ALIAS
+      - name: Install previous version, upgrade, and launch on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          script: |
+            set -euo pipefail
+            adb install release-apk/THE-TREASURE-previous.apk
+            adb shell monkey -p com.thetreasure.game 1
+            sleep 3
+            adb shell am force-stop com.thetreasure.game
+            adb install -r release-apk/THE-TREASURE.apk
+            adb shell dumpsys package com.thetreasure.game | grep -E 'versionCode=|versionName='
+            adb shell dumpsys package com.thetreasure.game | grep -q 'versionCode=4'
+            adb shell monkey -p com.thetreasure.game 1
+            sleep 5
+            adb shell pidof com.thetreasure.game
+      - name: Upload APK upgrade evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THE-TREASURE-apk-upgrade-evidence
+          path: release-apk/
+          if-no-files-found: warn
+          retention-days: 14
 
   master-summary:
     name: Master release status
@@ -45,21 +165,27 @@ jobs:
     if: always()
     needs:
       - gameplay-qa
+      - edge-case-qa
       - signed-release
+      - apk-upgrade-test
     steps:
       - name: Report pipeline result
         env:
           QA_RESULT: ${{ needs.gameplay-qa.result }}
+          EDGE_RESULT: ${{ needs.edge-case-qa.result }}
           RELEASE_RESULT: ${{ needs.signed-release.result }}
+          UPGRADE_RESULT: ${{ needs.apk-upgrade-test.result }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           {
             echo "## THE TREASURE — Master Release Pipeline"
             echo
             echo "- Playwright QA: **${QA_RESULT}**"
+            echo "- Edge-case regression QA: **${EDGE_RESULT}**"
             echo "- Signed APK release: **${RELEASE_RESULT}**"
+            echo "- APK install/upgrade test: **${UPGRADE_RESULT}**"
             echo
-            if [ "${QA_RESULT}" = "success" ] && [ "${RELEASE_RESULT}" = "success" ]; then
+            if [ "${QA_RESULT}" = "success" ] && [ "${EDGE_RESULT}" = "success" ] && [ "${RELEASE_RESULT}" = "success" ] && [ "${UPGRADE_RESULT}" = "success" ]; then
               echo "### Result: SUCCESS"
               echo "Download the `THE-TREASURE-signed-APK` artifact from this master run."
             else
@@ -69,6 +195,6 @@ jobs:
             echo
             echo "[Open this master run]($RUN_URL)"
           } >> "$GITHUB_STEP_SUMMARY"
-          if [ "${QA_RESULT}" != "success" ] || [ "${RELEASE_RESULT}" != "success" ]; then
+          if [ "${QA_RESULT}" != "success" ] || [ "${EDGE_RESULT}" != "success" ] || [ "${RELEASE_RESULT}" != "success" ] || [ "${UPGRADE_RESULT}" != "success" ]; then
             exit 1
           fi

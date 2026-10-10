@@ -144,3 +144,47 @@ test('mobile viewport has no horizontal shell overflow and captures a screenshot
   expect(dimensions.height).toBeGreaterThan(0);
   await page.screenshot({ path: 'test-results/artifacts/mobile-start-screen.png', fullPage: true });
 });
+
+
+test('background music toggle is available and responds to user input', async ({ page }) => {
+  const music = page.getByRole('button', { name: /MUSIC ON|MUSIC OFF/ }).first();
+  await expect(music).toBeVisible();
+  await expect(music).toHaveAttribute('aria-pressed', 'true');
+  await music.click();
+  await expect(music).toHaveText('♫ MUSIC OFF');
+  await expect(music).toHaveAttribute('aria-pressed', 'false');
+  await music.click();
+  await expect(music).toHaveText('♫ MUSIC ON');
+  await expect(music).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('forest chapters render flower patches and contain no tree drawing loops', async ({ page }) => {
+  await startAdventure(page);
+  for (const chapter of [1, 2]) {
+    await chooseChapter(page, chapter);
+    const game = page.frameLocator('#gameFrame');
+    const startLabels = { 1: 'ENTER THE FOREST', 2: 'BEGIN CHAPTER 2' };
+    await game.getByRole('button', { name: startLabels[chapter], exact: true }).click();
+    const script = (await game.locator('script').allTextContents()).join('\n');
+    expect(script).toContain('f5c8df');
+    expect(script).toContain('f4cf69');
+    expect(script).not.toMatch(/for\s*\(\s*(?:const|let)\s+\w+\s+of\s+trees\s*\)/);
+  }
+});
+
+
+test('starting the adventure wakes the browser audio engine for audible music', async ({ page }) => {
+  await page.getByRole('button', { name: 'START THE ADVENTURE' }).click();
+  await expect(page.frameLocator('#gameFrame').locator('body')).toBeVisible();
+  const status = await page.evaluate(async () => {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return { supported: false, state: 'unsupported' };
+    const ctx = new Ctx();
+    await ctx.resume();
+    const state = ctx.state;
+    await ctx.close();
+    return { supported: true, state };
+  });
+  expect(status.supported).toBe(true);
+  expect(status.state).toBe('running');
+});
