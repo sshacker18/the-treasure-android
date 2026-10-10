@@ -1,0 +1,65 @@
+name: THE TREASURE - Master Release Pipeline
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - qa/playwright-allure-ci
+    paths:
+      - "app/**"
+      - "tests/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: treasure-master-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gameplay-qa:
+    name: Child 1 - Playwright QA and report
+    uses: ./.github/workflows/playwright-qa.yml
+
+  signed-release:
+    name: Child 2 - Build, sign, and publish APK
+    needs: gameplay-qa
+    uses: ./.github/workflows/build-signed-apk.yml
+    secrets: inherit
+
+  master-summary:
+    name: Master release status
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - gameplay-qa
+      - signed-release
+    steps:
+      - name: Report pipeline result
+        env:
+          QA_RESULT: ${{ needs.gameplay-qa.result }}
+          RELEASE_RESULT: ${{ needs.signed-release.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "## THE TREASURE — Master Release Pipeline"
+            echo
+            echo "- Playwright QA: **${QA_RESULT}**"
+            echo "- Signed APK release: **${RELEASE_RESULT}**"
+            echo
+            if [ "${QA_RESULT}" = "success" ] && [ "${RELEASE_RESULT}" = "success" ]; then
+              echo "### Result: SUCCESS"
+              echo "Download the `THE-TREASURE-signed-APK` artifact from this master run."
+            else
+              echo "### Result: NEEDS ATTENTION"
+              echo "Open the failed child job above for the first failing step."
+            fi
+            echo
+            echo "[Open this master run]($RUN_URL)"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "${QA_RESULT}" != "success" ] || [ "${RELEASE_RESULT}" != "success" ]; then
+            exit 1
+          fi
