@@ -3,7 +3,7 @@ const { test, expect } = require('@playwright/test');
 async function startAdventure(page) {
   await page.goto('/');
   await page.getByRole('button', { name: 'START THE ADVENTURE' }).click();
-  await expect(page.locator('#gameFrame')).toBeVisible();
+  await expect(page.locator('#gameFrame')).toBeVisible();\n  await expect(page.frameLocator('#gameFrame').locator('body')).toBeVisible();
 }
 
 test('rapid start taps do not create duplicate game frames or crash the shell', async ({ page }) => {
