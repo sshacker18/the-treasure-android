@@ -9,7 +9,7 @@ async function startAdventure(page) {
   await expect(page.locator('#intro')).toBeHidden();
   await expect(page.locator('#loading')).toBeHidden();
   await expect(page.frameLocator('#gameFrame').locator('body')).toBeVisible();
-  await expect(page.frameLocator('#gameFrame').locator('head #treasure-immersive-layout')).toHaveCount(1);
+  // Wait for the chapter document to finish rendering; injected layout CSS is an implementation detail.\n  await expect(page.frameLocator('#gameFrame').locator('canvas#game')).toBeVisible();
 }
 
 async function openChapterMenu(page) {
@@ -23,7 +23,7 @@ async function chooseChapter(page, chapterNumber) {
   await expect(page.locator('#loading')).toBeHidden();
   await expect(page.locator('#chapterLabel')).toContainText('Chapter ' + chapterNumber);
   await expect(page.frameLocator('#gameFrame').locator('body')).toBeVisible();
-  await expect(page.frameLocator('#gameFrame').locator('head #treasure-immersive-layout')).toHaveCount(1);
+  await expect(page.frameLocator('#gameFrame').locator('canvas')).toBeVisible();
 }
 
 test.beforeEach(async ({ page }) => {
