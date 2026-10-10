@@ -57,3 +57,15 @@ Report:
 3. What checks actually passed or failed.
 4. A verified APK/artifact link if one exists for the latest commit.
 5. Remaining risks and the single next action.
+
+
+## Current continuation note — 2026-10-10
+
+- Active work branch: `control/immersive-touch-controls`; feature PR #17 remains unmerged. Do not merge without explicit user approval.
+- Current priority blockers: fix Playwright failures and make music audible/reliable across chapters.
+- Recent fixes on this branch: Chapter 1 analog joystick and stale arrow-listener removal; case-insensitive pause-menu locator; shell-level Web Audio synthesized score and Music ON/OFF control; Playwright workflow now triggers for `control/**`, `audio/**`, and `branding/**`.
+- Added Playwright test coverage for the shell music toggle. Validate it alongside chapter switching, pause/resume, mobile overflow, startup errors, and Chapter 1 joystick/interact.
+- The score is synthesized via Web Audio, not an imported soundtrack asset. No user-supplied music ZIP has been confirmed; don't claim imported/recorded music exists.
+- The latest observed Actions runs for commit `be0e50f024f7f9ec0f949dbd30a5d26ce5709965` were still in progress when checked. Re-check latest runs by branch/commit before reporting status; later commits may have newer runs.
+- Latest music/test edits may trigger additional runs. Confirm final commit SHA and exact run SHA match before offering APK artifacts. Android build success does not prove audible playback on a physical phone.
+- Delivery target: provide the newest verified debug APK for user DEV testing, then ask the user to confirm audible music and test gameplay. No production promotion without explicit approval.
