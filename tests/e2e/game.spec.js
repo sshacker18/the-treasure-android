@@ -47,10 +47,27 @@ test('Chapter 1 starts and exposes movement and interaction controls', async ({ 
   await expect(game.getByRole('button', { name: 'INTERACT' })).toBeVisible();
 });
 
-test('all four chapters can be selected and loaded using the visible game menu', async ({ page }) => {
+test('all four chapters load, start, and expose playable touch controls', async ({ page }) => {
   await startAdventure(page);
+  const starts = {
+    1: 'ENTER THE FOREST',
+    2: 'BEGIN CHAPTER 2',
+    3: 'DESCEND INTO THE ARCHIVE',
+    4: 'ENTER THE HEART CHAMBER'
+  };
   for (const chapter of [1, 2, 3, 4]) {
-    await chooseChapter(page, chapter);
+    if (chapter > 1 || chapter === 1) await chooseChapter(page, chapter);
+    const game = page.frameLocator('#gameFrame');
+    await expect(game.locator('canvas')).toBeVisible();
+    await game.getByRole('button', { name: starts[chapter], exact: true }).click();
+    const skip = game.locator('#skip');
+    if (await skip.count()) {
+      if (await skip.isVisible()) await skip.click();
+    }
+    for (const control of ['up', 'left', 'down', 'right']) {
+      await expect(game.locator('#' + control)).toBeVisible();
+    }
+    await expect(game.locator('#' + (chapter === 1 ? 'interact' : 'act'))).toBeVisible();
   }
 });
 
