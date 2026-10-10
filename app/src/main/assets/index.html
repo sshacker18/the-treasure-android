@@ -116,13 +116,6 @@ function loadChapter(index){
  frame.onload=()=>{
  loading.style.display='none';
  applyCompactGameplayStyles();
- // The host intro is the single start gate. Automatically dismiss the chapter's
- // duplicate title overlay after its document loads, otherwise the player sees
- // a second start screen and can mistake it for a frozen game.
- try{
-  const chapterStart=frame.contentDocument&&frame.contentDocument.getElementById('start');
-  if(chapterStart)chapterStart.click();
- }catch(error){console.error('Unable to start chapter gameplay',error)}
 };
 function applyCompactGameplayStyles(){
  try{
