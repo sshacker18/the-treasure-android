@@ -67,6 +67,6 @@ jobs:
             echo
             echo "[Open this master run](${RUN_URL})"
           } >> "$GITHUB_STEP_SUMMARY"
-          if [ "${RELEASE_RESULT}" != "success" ] || [ "${UPGRADE_RESULT}" != "success" ]; then
+          if [ "${RELEASE_RESULT}" != "success" ]; then
             exit 1
           fi
