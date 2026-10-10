@@ -29,11 +29,12 @@ test('Chapter 1 starts and exposes movement and interaction controls', async ({ 
 
 test('all four chapters can be selected and loaded', async ({ page }) => {
   await page.getByRole('button', { name: 'START THE ADVENTURE' }).click();
-  for (const chapter of ['0', '1', '2', '3']) {
-    await page.locator('#chapterSelect').selectOption(chapter);
+  for (const chapter of ['1', '2', '3', '4']) {
+    await page.getByRole('button', { name: /menu/i }).click();
+    await page.getByRole('button', { name: new RegExp('CHAPTER ' + chapter, 'i') }).click();
     await expect(page.locator('#loading')).toBeHidden();
     await expect(page.frameLocator('#gameFrame').locator('body')).toBeVisible();
-    await expect(page.locator('#chapterLabel')).toContainText('Chapter ' + (Number(chapter) + 1));
+    await expect(page.locator('#chapterLabel')).toContainText('Chapter ' + chapter);
   }
 });
 
@@ -49,14 +50,16 @@ test('pause menu can open, switch chapters, and resume', async ({ page }) => {
 });
 
 test('music toggle switches ON and OFF in the game shell', async ({ page }) => {
-  const music = page.getByRole('button', { name: /music on/i });
-  await expect(music).toBeVisible();
   await page.getByRole('button', { name: 'START THE ADVENTURE' }).click();
-  await expect(page.getByRole('button', { name: /music on/i })).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('button', { name: /music on/i }).click();
-  await expect(page.getByRole('button', { name: /music off/i })).toHaveAttribute('aria-pressed', 'false');
-  await page.getByRole('button', { name: /music off/i }).click();
-  await expect(page.getByRole('button', { name: /music on/i })).toHaveAttribute('aria-pressed', 'true');
+  const music = page.locator('#musicToggle');
+  await expect(music).toBeVisible();
+  await expect(music).toHaveAttribute('aria-pressed', 'true');
+  await music.click();
+  await expect(music).toHaveText(/MUSIC OFF/i);
+  await expect(music).toHaveAttribute('aria-pressed', 'false');
+  await music.click();
+  await expect(music).toHaveText(/MUSIC ON/i);
+  await expect(music).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('mobile viewport has no horizontal shell overflow', async ({ page }) => {
