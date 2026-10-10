@@ -190,8 +190,8 @@ jobs:
           password = os.environ.get("SMTP_APP_PASSWORD", "").strip()
           if not username or not password:
               print("EMAIL NOT SENT: configure repository Actions secrets TREASURE_SMTP_USERNAME and TREASURE_SMTP_APP_PASSWORD.")
-              print("The build/test results remain available from the workflow run page.")
-              sys.exit(1)
+              print("The build and QA results remain available from the workflow run page; missing optional email credentials do not invalidate a successful build.")
+              sys.exit(0)
 
           repo = os.environ["REPOSITORY"]
           run_id = os.environ["RUN_ID"]
