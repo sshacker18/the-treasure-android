@@ -52,19 +52,17 @@ jobs:
           activity = Path("app/src/main/java/com/relic/game/MainActivity.java").read_text()
 
           assert "chapter-complete" in html, "Missing chapter completion bridge"
-          chapters = re.findall(r"data-chapter=[\\\"']?([0-3])", html)
-          assert len(set(chapters)) == 4, f"Expected four chapter menu entries, found {sorted(set(chapters))}"
-          assert re.search(r"<\\\\/script", html, re.IGNORECASE), "Embedded chapter script closing tags must remain escaped"
+          chapters = [str(i) for i in range(4) if f'data-chapter="{i}"' in html]
+          assert len(chapters) == 4, f"Expected four chapter menu entries, found {chapters}"
+          assert r"<\\/script" in html.lower(), "Embedded chapter script closing tags must remain escaped"
           assert 'applicationId = "com.relic.game"' in gradle, "Unexpected RELIC application ID"
           assert 'namespace = "com.relic.game"' in gradle, "Unexpected RELIC namespace"
           assert "package com.relic.game;" in activity, "Activity package must match RELIC namespace"
-          assert re.search(r'versionCode\\s*=\\s*[1-9]\\d*', gradle), "versionCode must be positive"
-          version = re.search(r'versionName\\s*=\\s*"([^"]+)"', gradle)
-          assert version, "Missing versionName"
-          target = re.search(r"targetSdk\\s*=\\s*(\\d+)", gradle)
-          assert target and int(target.group(1)) >= 36, "Android target SDK must be 36+"
-          assert re.search(r'android:label="RELIC"', manifest), "Launcher label must be RELIC"
-          print(f"Static checks passed: RELIC {version.group(1)}, package com.relic.game, four chapters, target SDK {target.group(1)}.")
+          assert "versionCode = 4" in gradle, "Expected versionCode 4"
+          assert 'versionName = "2.0"' in gradle, "Expected versionName 2.0"
+          assert "targetSdk = 36" in gradle, "Android target SDK must be 36"
+          assert 'android:label="RELIC"' in manifest, "Launcher label must be RELIC"
+          print("Static checks passed: RELIC 2.0, package com.relic.game, four chapters, target SDK 36.")
           PY
 
       - name: Build debug APK
