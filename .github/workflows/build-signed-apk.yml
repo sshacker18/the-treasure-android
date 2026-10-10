@@ -2,6 +2,15 @@ name: THE TREASURE - Signed APK Pipeline
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - qa/playwright-allure-ci
+    paths:
+      - ".github/workflows/build-signed-apk.yml"
+      - "app/**"
+      - "tests/**"
+      - "package.json"
+      - "package-lock.json"
 
 permissions:
   contents: read
@@ -67,7 +76,7 @@ jobs:
             (.key_alias | strings | length > 0) and
             (.key_password | strings | length > 0)
           ' >/dev/null || {
-            echo "::error::TREASURE_QA_KEYSTORE_BASE64 must now contain a JSON signing configuration. See the workflow instructions in the repository."
+            echo "::error::TREASURE_QA_KEYSTORE_BASE64 must contain the JSON signing configuration created for this workflow."
             exit 1
           }
       - name: Validate project and chapter assets
