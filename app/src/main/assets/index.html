@@ -173,6 +173,45 @@ function applyCompactGameplayStyles(){
    }
   `;
   doc.head.appendChild(style);
+  // Circular, drag-anywhere joystick for phone-friendly movement. Reuses the chapter's
+  // existing directional buttons so the same tested movement logic remains authoritative.
+  const joystickStyle=doc.createElement('style');
+  joystickStyle.id='treasure-circular-joystick-style';
+  joystickStyle.textContent=`
+   .pad{display:none!important}
+   #treasureJoystick{position:fixed;left:clamp(12px,3vw,26px);bottom:clamp(14px,4vh,28px);width:112px;height:112px;border-radius:50%;z-index:7;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 28%,rgba(231,189,114,.23),rgba(15,27,21,.82) 68%);border:2px solid rgba(231,189,114,.82);box-shadow:0 3px 18px #0009;touch-action:none;user-select:none;-webkit-user-select:none}
+   #treasureJoystick:before{content:'';position:absolute;inset:10px;border:1px solid rgba(255,244,214,.22);border-radius:50%;pointer-events:none}
+   #treasureJoystick .treasure-stick{width:48px;height:48px;border-radius:50%;border:2px solid #f4d08b;background:radial-gradient(circle at 35% 30%,#e8c27d,#8d6028 78%);box-shadow:0 3px 8px #0009;pointer-events:none;transform:translate(0,0)}
+   #bottom{padding-left:140px!important}
+   #hint{display:none!important}
+   #actions{margin-left:auto!important;position:relative!important;z-index:8!important}
+   #actions button{min-width:52px!important;min-height:42px!important;font-size:11px!important}
+   @media(max-height:420px){#treasureJoystick{width:88px;height:88px}#treasureJoystick .treasure-stick{width:40px;height:40px}#bottom{padding-left:112px!important}#actions button{min-width:44px!important;min-height:35px!important}}
+  `;
+  doc.head.appendChild(joystickStyle);
+  if(!doc.getElementById('treasureJoystick')){
+   const joystick=doc.createElement('div');
+   joystick.id='treasureJoystick';joystick.setAttribute('role','application');joystick.setAttribute('aria-label','Circular movement joystick');joystick.setAttribute('data-active','');
+   const stick=doc.createElement('div');stick.className='treasure-stick';joystick.appendChild(stick);doc.body.appendChild(joystick);
+   const directions={up:doc.getElementById('up'),down:doc.getElementById('down'),left:doc.getElementById('left'),right:doc.getElementById('right')};
+   let activeDirections=[],dragging=false;
+   const releaseDirections=()=>{for(const name of activeDirections){const b=directions[name];if(b)b.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,cancelable:true,pointerType:'touch'}));}activeDirections=[];joystick.dataset.active='';};
+   const updateJoystick=e=>{
+    if(!dragging)return;
+    const r=joystick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+    let dx=e.clientX-cx,dy=e.clientY-cy;const max=r.width*.34,dist=Math.hypot(dx,dy),factor=dist>max?max/dist:1;dx*=factor;dy*=factor;
+    stick.style.transform=`translate(${dx}px,${dy}px)`;
+    const nx=dx/max,ny=dy/max,threshold=.28,next=[];
+    if(ny< -threshold)next.push('up');if(ny>threshold)next.push('down');if(nx< -threshold)next.push('left');if(nx>threshold)next.push('right');
+    for(const name of activeDirections){if(!next.includes(name)&&directions[name])directions[name].dispatchEvent(new PointerEvent('pointerup',{bubbles:true,cancelable:true,pointerType:'touch'}));}
+    for(const name of next){if(!activeDirections.includes(name)&&directions[name])directions[name].dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerType:'touch'}));}
+    activeDirections=next;joystick.dataset.active=next.join(',');
+   };
+   joystick.addEventListener('pointerdown',e=>{e.preventDefault();dragging=true;try{joystick.setPointerCapture(e.pointerId)}catch(_){}updateJoystick(e)});
+   joystick.addEventListener('pointermove',e=>{if(dragging){e.preventDefault();updateJoystick(e)}});
+   const endJoystick=e=>{if(!dragging)return;dragging=false;releaseDirections();stick.style.transform='translate(0,0)';try{if(joystick.hasPointerCapture(e.pointerId))joystick.releasePointerCapture(e.pointerId)}catch(_){}};
+   joystick.addEventListener('pointerup',endJoystick);joystick.addEventListener('pointercancel',endJoystick);joystick.addEventListener('lostpointercapture',()=>{if(dragging){dragging=false;releaseDirections();stick.style.transform='translate(0,0)'}});
+  }
   requestAnimationFrame(()=>{try{frame.contentWindow.dispatchEvent(new Event('resize'))}catch(_){}});
  }catch(error){console.error('Unable to apply immersive gameplay layout',error)}
 }
