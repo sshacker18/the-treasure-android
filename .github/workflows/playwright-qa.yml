@@ -1,7 +1,7 @@
 name: Playwright Game QA (standalone)
 
 on:
-  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
