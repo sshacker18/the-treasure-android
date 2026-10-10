@@ -62,7 +62,7 @@ for (const chapter of [1, 2, 3, 4]) {
     await game.getByRole('button', { name: starts[chapter], exact: true }).click();
     const skip = game.locator('#skip');
     if (await skip.count()) {
-      if (await skip.isVisible()) await skip.click();
+      if (await skip.isVisible()) await skip.click({ force: true, timeout: 3000 });
     }
     for (const control of ['up', 'left', 'down', 'right']) {
       await expect(game.locator('#' + control)).toBeVisible();
