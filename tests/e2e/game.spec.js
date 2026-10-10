@@ -3,7 +3,11 @@ const path = require('path');
 const gameFile = 'file://' + path.resolve('app/src/main/assets/index.html');
 
 async function startAdventure(page) {
-  await page.getByRole('button', { name: 'START THE ADVENTURE' }).click();
+  const begin = page.getByRole('button', { name: 'START THE ADVENTURE' });
+  await expect(begin).toBeVisible();
+  await begin.click();
+  await expect(page.locator('#intro')).toBeHidden();
+  await expect(page.locator('#loading')).toBeHidden();
   await expect(page.frameLocator('#gameFrame').locator('body')).toBeVisible();
   await expect(page.frameLocator('#gameFrame').locator('head #treasure-immersive-layout')).toHaveCount(1);
 }
@@ -40,7 +44,10 @@ test('Chapter 1 starts and exposes movement and interaction controls', async ({ 
   const game = page.frameLocator('#gameFrame');
   await expect(game.locator('canvas#game')).toBeVisible();
   await expect(game.getByRole('button', { name: 'ENTER THE FOREST' })).toBeVisible();
-  await game.getByRole('button', { name: 'ENTER THE FOREST' }).click();
+  const chapterStart = game.getByRole('button', { name: 'ENTER THE FOREST' });
+  await expect(chapterStart).toBeVisible();
+  await chapterStart.click();
+  await expect(game.locator('#overlay')).toHaveClass(/hidden/);
   const joystick = game.locator('#treasureJoystick');
   await expect(joystick).toBeVisible();
   const joystickBox = await joystick.boundingBox();
@@ -63,7 +70,11 @@ for (const chapter of [1, 2, 3, 4]) {
     };
     const game = page.frameLocator('#gameFrame');
     await expect(game.locator('canvas')).toBeVisible();
-    await game.getByRole('button', { name: starts[chapter], exact: true }).click();
+    const chapterStart = game.getByRole('button', { name: starts[chapter], exact: true });
+    await expect(chapterStart).toBeVisible();
+    await chapterStart.click();
+    // A visible button/joystick is not enough: prove the chapter intro actually closes.
+    await expect(game.locator('#overlay')).toHaveClass(/hidden/);
     const skip = game.locator('#skip');
     if (await skip.count()) {
       if (await skip.isVisible()) await skip.click({ force: true, timeout: 3000 });
