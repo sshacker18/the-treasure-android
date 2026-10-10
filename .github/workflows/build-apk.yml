@@ -2,15 +2,6 @@ name: THE TREASURE - Master Build and Release
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - qa/playwright-allure-ci
-    paths:
-      - ".github/workflows/build-apk.yml"
-      - "app/**"
-      - "tests/**"
-      - "package.json"
-      - "package-lock.json"
 
 permissions:
   contents: read
