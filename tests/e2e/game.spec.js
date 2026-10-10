@@ -66,6 +66,7 @@ for (const chapter of [1, 2, 3, 4]) {
     if (await skip.count()) {
       if (await skip.isVisible()) await skip.click({ force: true, timeout: 3000 });
     }
+    await expect(page.locator('#chapterDrawer')).not.toHaveClass(/open/);
     for (const control of ['up', 'left', 'down', 'right']) {
       await expect(game.locator('#' + control)).toBeVisible();
     }
