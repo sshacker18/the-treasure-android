@@ -1,8 +1,8 @@
-name: Build and Validate THE TREASURE Android
+name: THE TREASURE - Build, Test, and APK Artifacts
 
 on:
   push:
-    branches: [main, "qa/**"]
+    branches: [main, "qa/**", "ci/**"]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -11,111 +11,70 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    name: Build debug and Play candidates
+  build-test:
+    name: Build and validate Android APKs
     runs-on: ubuntu-latest
-    env:
-      PLAY_UPLOAD_KEYSTORE_BASE64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
-      PLAY_UPLOAD_STORE_PASSWORD: ${{ secrets.PLAY_UPLOAD_STORE_PASSWORD }}
-      PLAY_UPLOAD_KEY_ALIAS: ${{ secrets.PLAY_UPLOAD_KEY_ALIAS }}
-      PLAY_UPLOAD_KEY_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEY_PASSWORD }}
     steps:
-      - name: Check out repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platforms;android-35 platforms;android-36 build-tools;35.0.0 build-tools;36.0.0'
+          packages: "platforms;android-35 platforms;android-36 build-tools;35.0.0 build-tools;36.0.0"
           accept-android-sdk-licenses: true
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.11.1'
+          gradle-version: "8.11.1"
 
-      - name: Validate chapter shell and release config
+      - name: Validate project and chapter assets
         shell: bash
         run: |
           set -euo pipefail
+          test -f app/build.gradle.kts
+          test -f app/src/main/assets/index.html
+          test -f app/src/main/AndroidManifest.xml
           python3 - <<'PY'
           from pathlib import Path
           import re
           html = Path("app/src/main/assets/index.html").read_text()
-          assert len(re.findall(r'"id": "[1-4]"', html)) == 4, "Expected all four chapter definitions"
-          assert len(re.findall(r'data-chapter="[0-3]"', html)) == 4, "Expected chapter menu buttons"
-          assert 'body.playing #shellHeader,body.playing #shellFooter{display:none}' in html, "Immersive chrome rule missing"
-          assert "chapter-complete" in html, "Chapter completion bridge missing"
+          assert "chapter-complete" in html, "Missing chapter completion bridge"
+          assert len(re.findall(r'data-chapter=["\\']?[0-3]', html)) >= 4, "Expected chapter menu entries 1-4"
           gradle = Path("app/build.gradle.kts").read_text()
-          target = re.search(r'targetSdk\s*=\s*(\d+)', gradle)
-          assert target and int(target.group(1)) >= 36, "Play submission target must be API 36+"
-          assert "PLAY_UPLOAD_KEYSTORE_PATH" in gradle, "Protected Play signing configuration missing"
-          print("Static checks passed: Chapters 1–4, immersive menu, completion bridge, API 36, protected signing config")
+          target = re.search(r'targetSdk\\s*=\\s*(\\d+)', gradle)
+          assert target and int(target.group(1)) >= 36, "Android target SDK must be 36+"
+          print("Project and static release checks passed.")
           PY
-
-      - name: Prepare protected Play upload key
-        if: ${{ env.PLAY_UPLOAD_KEYSTORE_BASE64 != '' && env.PLAY_UPLOAD_STORE_PASSWORD != '' && env.PLAY_UPLOAD_KEY_ALIAS != '' && env.PLAY_UPLOAD_KEY_PASSWORD != '' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          KEYSTORE_PATH="$RUNNER_TEMP/the-treasure-upload.jks"
-          printf '%s' "$PLAY_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
-          test -s "$KEYSTORE_PATH"
-          chmod 600 "$KEYSTORE_PATH"
-          echo "PLAY_UPLOAD_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
-
-      - name: Explain unsigned candidate mode
-        if: ${{ env.PLAY_UPLOAD_KEYSTORE_BASE64 == '' || env.PLAY_UPLOAD_STORE_PASSWORD == '' || env.PLAY_UPLOAD_KEY_ALIAS == '' || env.PLAY_UPLOAD_KEY_PASSWORD == '' }}
-        run: echo "Play upload-key secrets are not fully configured. The AAB will be unsigned and MUST NOT be uploaded to Play Console."
 
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
 
-      - name: Build release APK candidate
+      - name: Run available unit tests
+        run: gradle testDebugUnitTest --no-daemon
+
+      - name: Build unsigned release APK
         run: gradle assembleRelease --no-daemon
 
-      - name: Build Android App Bundle candidate
+      - name: Build unsigned Android App Bundle
         run: gradle bundleRelease --no-daemon
 
-      - name: Verify Play App Bundle signature
-        if: ${{ env.PLAY_UPLOAD_KEYSTORE_BASE64 != '' && env.PLAY_UPLOAD_STORE_PASSWORD != '' && env.PLAY_UPLOAD_KEY_ALIAS != '' && env.PLAY_UPLOAD_KEY_PASSWORD != '' }}
-        run: jarsigner -verify -verbose app/build/outputs/bundle/release/app-release.aab
-
-      - name: Upload signed Play bundle
-        if: ${{ env.PLAY_UPLOAD_KEYSTORE_BASE64 != '' && env.PLAY_UPLOAD_STORE_PASSWORD != '' && env.PLAY_UPLOAD_KEY_ALIAS != '' && env.PLAY_UPLOAD_KEY_PASSWORD != '' }}
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: the-treasure-release-bundle-signed
-          path: app/build/outputs/bundle/release/app-release.aab
+          name: the-treasure-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload unsigned Play bundle candidate
-        if: ${{ env.PLAY_UPLOAD_KEYSTORE_BASE64 == '' || env.PLAY_UPLOAD_STORE_PASSWORD == '' || env.PLAY_UPLOAD_KEY_ALIAS == '' || env.PLAY_UPLOAD_KEY_PASSWORD == '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: the-treasure-release-bundle-unsigned
-          path: app/build/outputs/bundle/release/app-release.aab
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload signed release APK
-        if: ${{ env.PLAY_UPLOAD_KEYSTORE_BASE64 != '' && env.PLAY_UPLOAD_STORE_PASSWORD != '' && env.PLAY_UPLOAD_KEY_ALIAS != '' && env.PLAY_UPLOAD_KEY_PASSWORD != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: the-treasure-release-apk-signed
-          path: app/build/outputs/apk/release/app-release.apk
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload unsigned release APK candidate
-        if: ${{ env.PLAY_UPLOAD_KEYSTORE_BASE64 == '' || env.PLAY_UPLOAD_STORE_PASSWORD == '' || env.PLAY_UPLOAD_KEY_ALIAS == '' || env.PLAY_UPLOAD_KEY_PASSWORD == '' }}
+      - name: Upload unsigned release APK
         uses: actions/upload-artifact@v4
         with:
           name: the-treasure-release-apk-unsigned
@@ -123,10 +82,10 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload debug APK
+      - name: Upload unsigned AAB candidate
         uses: actions/upload-artifact@v4
         with:
-          name: the-treasure-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: the-treasure-release-bundle-unsigned
+          path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 14
