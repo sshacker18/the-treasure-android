@@ -4,3 +4,9 @@
 local.properties
 *.iml
 .idea/
+# Never commit Android upload keys or signing material
+*.jks
+*.keystore
+*.p12
+*.pfx
+secrets/
