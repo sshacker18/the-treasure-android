@@ -45,6 +45,8 @@ test('Chapter 1 starts and exposes movement and interaction controls', async ({ 
     await expect(game.getByRole('button', { name: control })).toBeVisible();
   }
   await expect(game.getByRole('button', { name: 'INTERACT' })).toBeVisible();
+  await expect(game.getByRole('button', { name: 'Fire at enemies' })).toBeVisible();
+  await game.getByRole('button', { name: 'Fire at enemies' }).click();
 });
 
 for (const chapter of [1, 2, 3, 4]) {
@@ -68,6 +70,12 @@ for (const chapter of [1, 2, 3, 4]) {
       await expect(game.locator('#' + control)).toBeVisible();
     }
     await expect(game.locator('#' + (chapter === 1 ? 'interact' : 'act'))).toBeVisible();
+    const fire = game.getByRole('button', { name: 'Fire at enemies' });
+    await expect(fire).toBeVisible();
+    const fireSize = await fire.boundingBox();
+    expect(fireSize.width).toBeGreaterThanOrEqual(34);
+    expect(fireSize.height).toBeGreaterThanOrEqual(31);
+    await fire.click();
   });
 }
 test('immersive gameplay keeps shell bars hidden and overlays compact controls on the canvas', async ({ page }) => {
