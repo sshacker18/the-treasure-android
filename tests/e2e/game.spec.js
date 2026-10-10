@@ -22,9 +22,8 @@ test('Chapter 1 starts and exposes movement and interaction controls', async ({ 
   await expect(game.locator('canvas#game')).toBeVisible();
   await expect(game.getByRole('button', { name: 'ENTER THE FOREST' })).toBeVisible();
   await game.getByRole('button', { name: 'ENTER THE FOREST' }).click();
-  for (const control of ['Move up', 'Move left', 'Move down', 'Move right']) {
-    await expect(game.getByRole('button', { name: control })).toBeVisible();
-  }
+  await expect(game.locator('#joystick')).toBeVisible();
+  await expect(game.locator('#joyKnob')).toBeVisible();
   await expect(game.getByRole('button', { name: 'INTERACT' })).toBeVisible();
 });
 
@@ -40,7 +39,7 @@ test('all four chapters can be selected and loaded', async ({ page }) => {
 
 test('pause menu can open, switch chapters, and resume', async ({ page }) => {
   await page.getByRole('button', { name: 'START THE ADVENTURE' }).click();
-  await page.getByRole('button', { name: /MENU/ }).click();
+  await page.getByRole('button', { name: /menu/i }).click();
   await expect(page.locator('#chapterDrawer')).toHaveClass(/open/);
   await page.getByRole('button', { name: 'CHAPTER 3' }).click();
   await expect(page.locator('#chapterLabel')).toContainText('Chapter 3');
