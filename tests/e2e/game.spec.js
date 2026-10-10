@@ -41,9 +41,11 @@ test('Chapter 1 starts and exposes movement and interaction controls', async ({ 
   await expect(game.locator('canvas#game')).toBeVisible();
   await expect(game.getByRole('button', { name: 'ENTER THE FOREST' })).toBeVisible();
   await game.getByRole('button', { name: 'ENTER THE FOREST' }).click();
-  for (const control of ['Move up', 'Move left', 'Move down', 'Move right']) {
-    await expect(game.getByRole('button', { name: control })).toBeVisible();
-  }
+  const joystick = game.locator('#treasureJoystick');
+  await expect(joystick).toBeVisible();
+  const joystickBox = await joystick.boundingBox();
+  expect(joystickBox.width).toBeGreaterThanOrEqual(85);
+  expect(joystickBox.height).toBeGreaterThanOrEqual(85);
   await expect(game.getByRole('button', { name: 'INTERACT' })).toBeVisible();
   await expect(game.getByRole('button', { name: 'Fire at enemies' })).toBeVisible();
   await game.getByRole('button', { name: 'Fire at enemies' }).click();
@@ -67,9 +69,11 @@ for (const chapter of [1, 2, 3, 4]) {
       if (await skip.isVisible()) await skip.click({ force: true, timeout: 3000 });
     }
     await expect(page.locator('#chapterDrawer')).not.toHaveClass(/open/);
-    for (const control of ['up', 'left', 'down', 'right']) {
-      await expect(game.locator('#' + control)).toBeVisible();
-    }
+    const joystick = game.locator('#treasureJoystick');
+    await expect(joystick).toBeVisible();
+    const joystickBox = await joystick.boundingBox();
+    expect(joystickBox.width).toBeGreaterThanOrEqual(85);
+    expect(joystickBox.height).toBeGreaterThanOrEqual(85);
     await expect(game.locator('#' + (chapter === 1 ? 'interact' : 'act'))).toBeVisible();
     const fire = game.getByRole('button', { name: 'Fire at enemies' });
     await expect(fire).toBeVisible();
@@ -77,6 +81,17 @@ for (const chapter of [1, 2, 3, 4]) {
     expect(fireSize.width).toBeGreaterThanOrEqual(34);
     expect(fireSize.height).toBeGreaterThanOrEqual(31);
     await fire.click();
+    if (chapter === 1) {
+      const x = joystickBox.x + joystickBox.width / 2;
+      const y = joystickBox.y + joystickBox.height / 2;
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await page.mouse.move(x + 30, y + 30, { steps: 3 });
+      await expect(joystick).toHaveAttribute('data-active', /right/);
+      await expect(joystick).toHaveAttribute('data-active', /down/);
+      await page.mouse.up();
+      await expect(joystick).toHaveAttribute('data-active', '');
+    }
   });
 }
 test('immersive gameplay keeps shell bars hidden and overlays compact controls on the canvas', async ({ page }) => {
