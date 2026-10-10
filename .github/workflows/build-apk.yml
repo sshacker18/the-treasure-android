@@ -54,7 +54,7 @@ jobs:
           assert "chapter-complete" in html, "Missing chapter completion bridge"
           chapters = [str(i) for i in range(4) if f'data-chapter="{i}"' in html]
           assert len(chapters) == 4, f"Expected four chapter menu entries, found {chapters}"
-          assert r"<\\/script" in html.lower(), "Embedded chapter script closing tags must remain escaped"
+          assert r"<\/script" in html.lower(), "Embedded chapter script closing tags must remain escaped"
           assert 'applicationId = "com.relic.game"' in gradle, "Unexpected RELIC application ID"
           assert 'namespace = "com.relic.game"' in gradle, "Unexpected RELIC namespace"
           assert "package com.relic.game;" in activity, "Activity package must match RELIC namespace"
