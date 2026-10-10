@@ -5,6 +5,7 @@ const gameFile = 'file://' + path.resolve('app/src/main/assets/index.html');
 async function startAdventure(page) {
   await page.getByRole('button', { name: 'START THE ADVENTURE' }).click();
   await expect(page.frameLocator('#gameFrame').locator('body')).toBeVisible();
+  await expect(page.frameLocator('#gameFrame').locator('head #treasure-immersive-layout')).toHaveCount(1);
 }
 
 async function openChapterMenu(page) {
@@ -50,6 +51,36 @@ test('all four chapters can be selected and loaded using the visible game menu',
   for (const chapter of [1, 2, 3, 4]) {
     await chooseChapter(page, chapter);
   }
+});
+
+test('immersive gameplay keeps shell bars hidden and overlays compact controls on the canvas', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await startAdventure(page);
+  const shell = await page.evaluate(() => ({
+    header: getComputedStyle(document.querySelector('#shellHeader')).display,
+    footer: getComputedStyle(document.querySelector('#shellFooter')).display,
+    frame: document.querySelector('#frameWrap').getBoundingClientRect().toJSON()
+  }));
+  expect(shell.header).toBe('none');
+  expect(shell.footer).toBe('none');
+  expect(shell.frame.width).toBe(844);
+  expect(shell.frame.height).toBe(390);
+
+  const gameLayout = await page.frameLocator('#gameFrame').locator('#bottom').evaluate(el => ({
+    position: getComputedStyle(el).position,
+    bottom: getComputedStyle(el).bottom,
+    hintVisible: getComputedStyle(el.querySelector('#hint')).display !== 'none',
+    canvasHeight: el.ownerDocument.querySelector('canvas').getBoundingClientRect().height,
+    viewportHeight: el.ownerDocument.documentElement.clientHeight
+  }));
+  expect(gameLayout.position).toBe('absolute');
+  expect(gameLayout.hintVisible).toBe(true);
+  expect(gameLayout.canvasHeight).toBe(gameLayout.viewportHeight);
+
+  // Regression guard for the former 7-second timer that restored header/footer chrome.
+  await page.waitForTimeout(7300);
+  await expect(page.locator('#shellHeader')).toBeHidden();
+  await expect(page.locator('#shellFooter')).toBeHidden();
 });
 
 test('chapter menu can switch chapters and resume', async ({ page }) => {
