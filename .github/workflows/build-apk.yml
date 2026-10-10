@@ -1,7 +1,9 @@
-name: Build THE TREASURE Android APK
+name: Build and Validate THE TREASURE Android
 
 on:
   push:
+    branches: [main, "qa/**"]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -25,7 +27,7 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platforms;android-35 build-tools;35.0.0'
+          packages: 'platforms;android-35 platforms;android-36 build-tools;35.0.0 build-tools;36.0.0'
           accept-android-sdk-licenses: true
 
       - name: Set up Gradle
@@ -33,10 +35,28 @@ jobs:
         with:
           gradle-version: '8.11.1'
 
+      - name: Validate chapter shell and release config
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("app/src/main/assets/index.html").read_text()
+          assert len(re.findall(r'"id": "[1-4]"', html)) == 4, "Expected all four chapter definitions"
+          assert len(re.findall(r'data-chapter="[0-3]"', html)) == 4, "Expected chapter menu buttons"
+          assert 'body.playing #shellHeader,body.playing #shellFooter{display:none}' in html, "Immersive chrome rule missing"
+          assert "chapter-complete" in html, "Chapter completion bridge missing"
+          gradle = Path("app/build.gradle.kts").read_text()
+          target = re.search(r'targetSdk\s*=\s*(\d+)', gradle)
+          assert target and int(target.group(1)) >= 36, "Play submission target must be API 36+"
+          print("Static checks passed: 4 chapters, immersive menu, completion bridge, target API")
+          PY
+
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
 
-      - name: Upload APK artifact
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: the-treasure-debug-apk
