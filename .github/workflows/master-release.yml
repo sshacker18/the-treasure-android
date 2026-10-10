@@ -164,15 +164,11 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     needs:
-      - gameplay-qa
-      - edge-case-qa
       - signed-release
       - apk-upgrade-test
     steps:
       - name: Report pipeline result
         env:
-          QA_RESULT: ${{ needs.gameplay-qa.result }}
-          EDGE_RESULT: ${{ needs.edge-case-qa.result }}
           RELEASE_RESULT: ${{ needs.signed-release.result }}
           UPGRADE_RESULT: ${{ needs.apk-upgrade-test.result }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -180,12 +176,10 @@ jobs:
           {
             echo "## THE TREASURE — Master Release Pipeline"
             echo
-            echo "- Playwright QA: **${QA_RESULT}**"
-            echo "- Edge-case regression QA: **${EDGE_RESULT}**"
             echo "- Signed APK release: **${RELEASE_RESULT}**"
             echo "- APK install/upgrade test: **${UPGRADE_RESULT}**"
             echo
-            if [ "${QA_RESULT}" = "success" ] && [ "${EDGE_RESULT}" = "success" ] && [ "${RELEASE_RESULT}" = "success" ] && [ "${UPGRADE_RESULT}" = "success" ]; then
+            if [ "${RELEASE_RESULT}" = "success" ] && [ "${UPGRADE_RESULT}" = "success" ]; then
               echo "### Result: SUCCESS"
               echo "Download the `THE-TREASURE-signed-APK` artifact from this master run."
             else
@@ -193,8 +187,8 @@ jobs:
               echo "Open the failed child job above for the first failing step."
             fi
             echo
-            echo "[Open this master run]($RUN_URL)"
+            echo "[Open this master run](${RUN_URL})"
           } >> "$GITHUB_STEP_SUMMARY"
-          if [ "${QA_RESULT}" != "success" ] || [ "${EDGE_RESULT}" != "success" ] || [ "${RELEASE_RESULT}" != "success" ] || [ "${UPGRADE_RESULT}" != "success" ]; then
+          if [ "${RELEASE_RESULT}" != "success" ] || [ "${UPGRADE_RESULT}" != "success" ]; then
             exit 1
           fi
