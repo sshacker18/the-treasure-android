@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-test:
@@ -45,7 +45,6 @@ jobs:
           test -f app/src/main/java/com/relic/game/MainActivity.java
           python3 - <<'PY'
           from pathlib import Path
-          import re
           html = Path("app/src/main/assets/index.html").read_text()
           manifest = Path("app/src/main/AndroidManifest.xml").read_text()
           gradle = Path("app/build.gradle.kts").read_text()
@@ -54,7 +53,7 @@ jobs:
           assert "chapter-complete" in html, "Missing chapter completion bridge"
           chapters = [str(i) for i in range(4) if f'data-chapter="{i}"' in html]
           assert len(chapters) == 4, f"Expected four chapter menu entries, found {chapters}"
-          assert r"<\/script" in html.lower(), "Embedded chapter script closing tags must remain escaped"
+          assert r"<\\/script" in html.lower(), "Embedded chapter script closing tags must remain escaped"
           assert 'applicationId = "com.relic.game"' in gradle, "Unexpected RELIC application ID"
           assert 'namespace = "com.relic.game"' in gradle, "Unexpected RELIC namespace"
           assert "package com.relic.game;" in activity, "Activity package must match RELIC namespace"
@@ -75,7 +74,6 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           from zipfile import ZipFile
-          import re
 
           apk = Path("app/build/outputs/apk/debug/app-debug.apk")
           assert apk.is_file() and apk.stat().st_size > 0, "Debug APK missing or empty"
@@ -124,6 +122,22 @@ jobs:
             stat -c '%n %s bytes' "$APK_DEBUG" "$APK_RELEASE" "$AAB"
           } > build-metadata/build-manifest.txt
           cat build-metadata/build-manifest.txt
+
+      - name: Publish direct APK download as a GitHub prerelease
+        if: startsWith(github.ref, 'refs/heads/control/') && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="relic-test-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" \
+            "app/build/outputs/apk/debug/app-debug.apk#RELIC-debug.apk" \
+            "build-metadata/build-manifest.txt#build-manifest.txt" \
+            --prerelease \
+            --title "RELIC Test Build ${GITHUB_RUN_NUMBER}" \
+            --notes "Automated test build from commit ${GITHUB_SHA}. This is a debug APK for testing, not a production Play Store release. Device installation and gameplay still require manual verification."
 
       - name: Upload debug APK (rapid testing lane)
         uses: actions/upload-artifact@v4
