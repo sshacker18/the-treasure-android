@@ -10,3 +10,8 @@ local.properties
 *.p12
 *.pfx
 secrets/
+
+# Never commit local environment files or signing credentials
+.env
+.env.*
+!.env.example
