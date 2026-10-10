@@ -30,6 +30,50 @@ jobs:
     uses: ./.github/workflows/build-signed-apk.yml
     secrets: inherit
 
+  apk-upgrade-test:
+    name: Child 3 - APK install and upgrade test
+    needs: signed-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download signed APK from this master run
+        uses: actions/download-artifact@v4
+        with:
+          name: THE-TREASURE-signed-APK
+          path: release-apk
+      - name: Validate APK metadata and signing certificate
+        run: |
+          set -euo pipefail
+          APK=release-apk/THE-TREASURE.apk
+          test -s "$APK"
+          SDK="$ANDROID_HOME/build-tools/36.0.0"
+          "$SDK/apksigner" verify --verbose "$APK"
+          "$SDK/aapt" dump badging "$APK" | tee release-apk/apk-metadata.txt
+          grep -q "package: name='com.thetreasure.game'" release-apk/apk-metadata.txt
+          grep -q "versionCode='3'" release-apk/apk-metadata.txt
+      - name: Install and upgrade APK on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          script: |
+            set -euo pipefail
+            adb install release-apk/THE-TREASURE.apk
+            adb shell am force-stop com.thetreasure.game
+            adb install -r release-apk/THE-TREASURE.apk
+            adb shell monkey -p com.thetreasure.game 1
+            sleep 5
+            adb shell pidof com.thetreasure.game
+      - name: Upload APK upgrade evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THE-TREASURE-apk-upgrade-evidence
+          path: release-apk/
+          if-no-files-found: warn
+          retention-days: 14
+
   master-summary:
     name: Master release status
     runs-on: ubuntu-latest
@@ -37,11 +81,13 @@ jobs:
     needs:
       - gameplay-qa
       - signed-release
+      - apk-upgrade-test
     steps:
       - name: Report pipeline result
         env:
           QA_RESULT: ${{ needs.gameplay-qa.result }}
           RELEASE_RESULT: ${{ needs.signed-release.result }}
+          UPGRADE_RESULT: ${{ needs.apk-upgrade-test.result }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           {
@@ -49,8 +95,9 @@ jobs:
             echo
             echo "- Playwright QA: **${QA_RESULT}**"
             echo "- Signed APK release: **${RELEASE_RESULT}**"
+            echo "- APK install/upgrade test: **${UPGRADE_RESULT}**"
             echo
-            if [ "${QA_RESULT}" = "success" ] && [ "${RELEASE_RESULT}" = "success" ]; then
+            if [ "${QA_RESULT}" = "success" ] && [ "${RELEASE_RESULT}" = "success" ] && [ "${UPGRADE_RESULT}" = "success" ]; then
               echo "### Result: SUCCESS"
               echo "Download the `THE-TREASURE-signed-APK` artifact from this master run."
             else
@@ -60,6 +107,6 @@ jobs:
             echo
             echo "[Open this master run]($RUN_URL)"
           } >> "$GITHUB_STEP_SUMMARY"
-          if [ "${QA_RESULT}" != "success" ] || [ "${RELEASE_RESULT}" != "success" ]; then
+          if [ "${QA_RESULT}" != "success" ] || [ "${RELEASE_RESULT}" != "success" ] || [ "${UPGRADE_RESULT}" != "success" ]; then
             exit 1
           fi
