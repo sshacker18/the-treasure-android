@@ -19,6 +19,7 @@ async function chooseChapter(page, chapterNumber) {
   await expect(page.locator('#loading')).toBeHidden();
   await expect(page.locator('#chapterLabel')).toContainText('Chapter ' + chapterNumber);
   await expect(page.frameLocator('#gameFrame').locator('body')).toBeVisible();
+  await expect(page.frameLocator('#gameFrame').locator('head #treasure-immersive-layout')).toHaveCount(1);
 }
 
 test.beforeEach(async ({ page }) => {
