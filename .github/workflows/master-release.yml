@@ -33,9 +33,40 @@ jobs:
     name: Child 1 - Playwright QA and report
     uses: ./.github/workflows/playwright-qa.yml
 
+  edge-case-qa:
+    name: Child 4 - Gameplay edge-case regression suite
+    runs-on: ubuntu-latest
+    needs: gameplay-qa
+    timeout-minutes: 20
+    steps:
+      - name: Checkout tested PR commit
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: package.json
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Run edge-case Playwright suite
+        run: npx playwright test tests/e2e/edge-cases.spec.js
+      - name: Upload edge-case evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THE-TREASURE-edge-case-evidence
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
   signed-release:
     name: Child 2 - Build, sign, and publish APK
-    needs: gameplay-qa
+    needs: [gameplay-qa, edge-case-qa]
     uses: ./.github/workflows/build-signed-apk.yml
     secrets: inherit
 
@@ -133,12 +164,14 @@ jobs:
     if: always()
     needs:
       - gameplay-qa
+      - edge-case-qa
       - signed-release
       - apk-upgrade-test
     steps:
       - name: Report pipeline result
         env:
           QA_RESULT: ${{ needs.gameplay-qa.result }}
+          EDGE_RESULT: ${{ needs.edge-case-qa.result }}
           RELEASE_RESULT: ${{ needs.signed-release.result }}
           UPGRADE_RESULT: ${{ needs.apk-upgrade-test.result }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -147,10 +180,11 @@ jobs:
             echo "## THE TREASURE — Master Release Pipeline"
             echo
             echo "- Playwright QA: **${QA_RESULT}**"
+            echo "- Edge-case regression QA: **${EDGE_RESULT}**"
             echo "- Signed APK release: **${RELEASE_RESULT}**"
             echo "- APK install/upgrade test: **${UPGRADE_RESULT}**"
             echo
-            if [ "${QA_RESULT}" = "success" ] && [ "${RELEASE_RESULT}" = "success" ] && [ "${UPGRADE_RESULT}" = "success" ]; then
+            if [ "${QA_RESULT}" = "success" ] && [ "${EDGE_RESULT}" = "success" ] && [ "${RELEASE_RESULT}" = "success" ] && [ "${UPGRADE_RESULT}" = "success" ]; then
               echo "### Result: SUCCESS"
               echo "Download the `THE-TREASURE-signed-APK` artifact from this master run."
             else
@@ -160,6 +194,6 @@ jobs:
             echo
             echo "[Open this master run]($RUN_URL)"
           } >> "$GITHUB_STEP_SUMMARY"
-          if [ "${QA_RESULT}" != "success" ] || [ "${RELEASE_RESULT}" != "success" ] || [ "${UPGRADE_RESULT}" != "success" ]; then
+          if [ "${QA_RESULT}" != "success" ] || [ "${EDGE_RESULT}" != "success" ] || [ "${RELEASE_RESULT}" != "success" ] || [ "${UPGRADE_RESULT}" != "success" ]; then
             exit 1
           fi
