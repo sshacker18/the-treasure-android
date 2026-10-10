@@ -35,7 +35,7 @@ jobs:
         with:
           gradle-version: "8.11.1"
 
-      - name: Validate project and chapter assets
+      - name: Validate project, version, and embedded chapter assets
         shell: bash
         run: |
           set -euo pipefail
@@ -46,12 +46,21 @@ jobs:
           from pathlib import Path
           import re
           html = Path("app/src/main/assets/index.html").read_text()
-          assert "chapter-complete" in html, "Missing chapter completion bridge"
-          assert len(re.findall(r"data-chapter=[\"']?[0-3]", html)) >= 4, "Expected chapter menu entries 1-4"
+          manifest = Path("app/src/main/AndroidManifest.xml").read_text()
           gradle = Path("app/build.gradle.kts").read_text()
-          target = re.search(r"targetSdk\s*=\s*(\d+)", gradle)
+
+          assert "chapter-complete" in html, "Missing chapter completion bridge"
+          chapters = re.findall(r"data-chapter=[\"']?([0-3])", html)
+          assert len(set(chapters)) == 4, f"Expected chapter menu entries 1-4, found {sorted(set(chapters))}"
+          assert re.search(r"<\\/script", html, re.IGNORECASE), "Embedded chapter script closing tags must remain escaped in wrapper source"
+          assert 'applicationId = "com.thetreasure.game"' in gradle, "Unexpected Android application ID"
+          assert re.search(r'versionCode\\s*=\\s*[1-9]\\d*', gradle), "versionCode must be a positive integer"
+          version = re.search(r'versionName\\s*=\\s*"([^"]+)"', gradle)
+          assert version, "Missing versionName"
+          target = re.search(r"targetSdk\\s*=\\s*(\\d+)", gradle)
           assert target and int(target.group(1)) >= 36, "Android target SDK must be 36+"
-          print("Project and static release checks passed.")
+          assert "THE TREASURE" in manifest, "Manifest must contain the branded app label"
+          print(f"Static checks passed: THE TREASURE {version.group(1)}, four chapters, target SDK {target.group(1)}.")
           PY
 
       - name: Build debug APK
@@ -66,26 +75,61 @@ jobs:
       - name: Build unsigned Android App Bundle
         run: gradle bundleRelease --no-daemon
 
-      - name: Upload debug APK
+      - name: Generate artifact manifest and enforce APK size budget
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-metadata
+          APK_DEBUG="app/build/outputs/apk/debug/app-debug.apk"
+          APK_RELEASE="app/build/outputs/apk/release/app-release-unsigned.apk"
+          AAB="app/build/outputs/bundle/release/app-release.aab"
+          for file in "$APK_DEBUG" "$APK_RELEASE" "$AAB"; do
+            test -s "$file"
+          done
+          # Initial lightweight budget: 50 MiB per APK. Raise only with a reviewed reason.
+          for file in "$APK_DEBUG" "$APK_RELEASE"; do
+            bytes=$(stat -c%s "$file")
+            if [ "$bytes" -gt 52428800 ]; then
+              echo "::error file=$file::APK exceeds the 50 MiB size budget ($bytes bytes)"
+              exit 1
+            fi
+          done
+          {
+            echo "app_name=THE TREASURE"
+            grep -E 'applicationId =|versionCode =|versionName =' app/build.gradle.kts | sed 's/^/android_config=/'
+            echo "commit=$GITHUB_SHA"
+            echo "run_id=$GITHUB_RUN_ID"
+            sha256sum "$APK_DEBUG" "$APK_RELEASE" "$AAB"
+            stat -c '%n %s bytes' "$APK_DEBUG" "$APK_RELEASE" "$AAB"
+          } > build-metadata/build-manifest.txt
+          cat build-metadata/build-manifest.txt
+
+      - name: Upload debug APK (rapid testing lane)
         uses: actions/upload-artifact@v4
         with:
           name: the-treasure-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            build-metadata/build-manifest.txt
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
 
-      - name: Upload unsigned release APK
+      - name: Upload unsigned release APK candidate
         uses: actions/upload-artifact@v4
         with:
           name: the-treasure-release-apk-unsigned
-          path: app/build/outputs/apk/release/app-release-unsigned.apk
+          path: |
+            app/build/outputs/apk/release/app-release-unsigned.apk
+            build-metadata/build-manifest.txt
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
 
       - name: Upload unsigned AAB candidate
         uses: actions/upload-artifact@v4
         with:
           name: the-treasure-release-bundle-unsigned
-          path: app/build/outputs/bundle/release/app-release.aab
+          path: |
+            app/build/outputs/bundle/release/app-release.aab
+            build-metadata/build-manifest.txt
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
