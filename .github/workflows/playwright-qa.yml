@@ -2,7 +2,7 @@ name: Playwright Game QA
 
 on:
   push:
-    branches: [main, "qa/**"]
+    branches: [main, "qa/**", "control/**", "audio/**", "branding/**"]
   pull_request:
     branches: [main]
   workflow_dispatch:
