@@ -1,4 +1,4 @@
-name: RELIC - Build, Test, and APK Artifacts
+name: RELIC - Playwright QA, Android Build, and APK Artifacts
 
 on:
   push:
@@ -7,13 +7,56 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: relic-ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
-  build-test:
+  browser-qa:
+    name: Playwright gameplay and responsive QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install Playwright dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Prepare report directories
+        run: mkdir -p test-results/artifacts
+
+      - name: Run Playwright tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright reports, JUnit, screenshots, videos, and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relic-playwright-qa-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  android-build:
     name: Build and validate RELIC Android APKs
     runs-on: ubuntu-latest
+    needs: browser-qa
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,7 +78,7 @@ jobs:
         with:
           gradle-version: "8.11.1"
 
-      - name: Validate project, version, package, and embedded chapter assets
+      - name: Validate RELIC identity, version, and embedded chapter assets
         shell: bash
         run: |
           set -euo pipefail
@@ -54,21 +97,21 @@ jobs:
           assert "chapter-complete" in html, "Missing chapter completion bridge"
           chapters = [str(i) for i in range(4) if f'data-chapter="{i}"' in html]
           assert len(chapters) == 4, f"Expected four chapter menu entries, found {chapters}"
-          assert r"<\/script" in html.lower(), "Embedded chapter script closing tags must remain escaped"
-          assert 'applicationId = "com.relic.game"' in gradle, "Unexpected RELIC application ID"
-          assert 'namespace = "com.relic.game"' in gradle, "Unexpected RELIC namespace"
-          assert "package com.relic.game;" in activity, "Activity package must match RELIC namespace"
+          assert r"<\\/script" in html.lower(), "Embedded chapter script closing tags must remain escaped"
+          assert 'applicationId = "com.relic.game"' in gradle, "Unexpected application ID"
+          assert 'namespace = "com.relic.game"' in gradle, "Unexpected namespace"
+          assert "package com.relic.game;" in activity, "Activity package mismatch"
           assert "versionCode = 4" in gradle, "Expected versionCode 4"
           assert 'versionName = "2.0"' in gradle, "Expected versionName 2.0"
-          assert "targetSdk = 36" in gradle, "Android target SDK must be 36"
+          assert "targetSdk = 36" in gradle, "Expected target SDK 36"
           assert 'android:label="RELIC"' in manifest, "Launcher label must be RELIC"
-          print("Static checks passed: RELIC 2.0, package com.relic.game, four chapters, target SDK 36.")
+          print("Static checks passed: RELIC 2.0, com.relic.game, four chapters, target SDK 36.")
           PY
 
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
 
-      - name: Run available unit tests
+      - name: Run available Android unit tests
         run: gradle testDebugUnitTest --no-daemon
 
       - name: Build unsigned release APK
@@ -103,7 +146,7 @@ jobs:
           } > build-metadata/build-manifest.txt
           cat build-metadata/build-manifest.txt
 
-      - name: Upload debug APK (rapid testing lane)
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: relic-debug-apk
