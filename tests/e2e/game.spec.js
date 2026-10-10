@@ -9,7 +9,8 @@ async function startAdventure(page) {
   await expect(page.locator('#intro')).toBeHidden();
   await expect(page.locator('#loading')).toBeHidden();
   await expect(page.frameLocator('#gameFrame').locator('body')).toBeVisible();
-  // Wait for the chapter document to finish rendering; injected layout CSS is an implementation detail.\n  await expect(page.frameLocator('#gameFrame').locator('canvas#game')).toBeVisible();
+  // Wait for the chapter document to finish rendering; injected layout CSS is an implementation detail.
+  await expect(page.frameLocator('#gameFrame').locator('canvas#game')).toBeVisible();
 }
 
 async function openChapterMenu(page) {
