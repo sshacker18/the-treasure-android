@@ -12,8 +12,13 @@ permissions:
 
 jobs:
   build:
-    name: Build debug APK
+    name: Build debug and Play candidates
     runs-on: ubuntu-latest
+    env:
+      PLAY_UPLOAD_KEYSTORE_BASE64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
+      PLAY_UPLOAD_STORE_PASSWORD: ${{ secrets.PLAY_UPLOAD_STORE_PASSWORD }}
+      PLAY_UPLOAD_KEY_ALIAS: ${{ secrets.PLAY_UPLOAD_KEY_ALIAS }}
+      PLAY_UPLOAD_KEY_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEY_PASSWORD }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -50,19 +55,49 @@ jobs:
           gradle = Path("app/build.gradle.kts").read_text()
           target = re.search(r'targetSdk\s*=\s*(\d+)', gradle)
           assert target and int(target.group(1)) >= 36, "Play submission target must be API 36+"
-          print("Static checks passed: 4 chapters, immersive menu, completion bridge, target API")
+          assert "PLAY_UPLOAD_KEYSTORE_PATH" in gradle, "Protected Play signing configuration missing"
+          print("Static checks passed: Chapters 1–4, immersive menu, completion bridge, API 36, protected signing config")
           PY
+
+      - name: Prepare protected Play upload key
+        if: ${{ env.PLAY_UPLOAD_KEYSTORE_BASE64 != '' && env.PLAY_UPLOAD_STORE_PASSWORD != '' && env.PLAY_UPLOAD_KEY_ALIAS != '' && env.PLAY_UPLOAD_KEY_PASSWORD != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          KEYSTORE_PATH="$RUNNER_TEMP/the-treasure-upload.jks"
+          printf '%s' "$PLAY_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          test -s "$KEYSTORE_PATH"
+          chmod 600 "$KEYSTORE_PATH"
+          echo "PLAY_UPLOAD_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+
+      - name: Explain unsigned candidate mode
+        if: ${{ env.PLAY_UPLOAD_KEYSTORE_BASE64 == '' || env.PLAY_UPLOAD_STORE_PASSWORD == '' || env.PLAY_UPLOAD_KEY_ALIAS == '' || env.PLAY_UPLOAD_KEY_PASSWORD == '' }}
+        run: echo "Play upload-key secrets are not fully configured. The AAB will be unsigned and MUST NOT be uploaded to Play Console."
 
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
 
-      - name: Build release APK (unsigned)
+      - name: Build release APK candidate
         run: gradle assembleRelease --no-daemon
 
-      - name: Build Android App Bundle (unsigned)
+      - name: Build Android App Bundle candidate
         run: gradle bundleRelease --no-daemon
 
-      - name: Upload Play bundle candidate
+      - name: Verify Play App Bundle signature
+        if: ${{ env.PLAY_UPLOAD_KEYSTORE_BASE64 != '' && env.PLAY_UPLOAD_STORE_PASSWORD != '' && env.PLAY_UPLOAD_KEY_ALIAS != '' && env.PLAY_UPLOAD_KEY_PASSWORD != '' }}
+        run: jarsigner -verify -verbose app/build/outputs/bundle/release/app-release.aab
+
+      - name: Upload signed Play bundle
+        if: ${{ env.PLAY_UPLOAD_KEYSTORE_BASE64 != '' && env.PLAY_UPLOAD_STORE_PASSWORD != '' && env.PLAY_UPLOAD_KEY_ALIAS != '' && env.PLAY_UPLOAD_KEY_PASSWORD != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: the-treasure-release-bundle-signed
+          path: app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload unsigned Play bundle candidate
+        if: ${{ env.PLAY_UPLOAD_KEYSTORE_BASE64 == '' || env.PLAY_UPLOAD_STORE_PASSWORD == '' || env.PLAY_UPLOAD_KEY_ALIAS == '' || env.PLAY_UPLOAD_KEY_PASSWORD == '' }}
         uses: actions/upload-artifact@v4
         with:
           name: the-treasure-release-bundle-unsigned
@@ -70,7 +105,17 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload release APK (unsigned)
+      - name: Upload signed release APK
+        if: ${{ env.PLAY_UPLOAD_KEYSTORE_BASE64 != '' && env.PLAY_UPLOAD_STORE_PASSWORD != '' && env.PLAY_UPLOAD_KEY_ALIAS != '' && env.PLAY_UPLOAD_KEY_PASSWORD != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: the-treasure-release-apk-signed
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload unsigned release APK candidate
+        if: ${{ env.PLAY_UPLOAD_KEYSTORE_BASE64 == '' || env.PLAY_UPLOAD_STORE_PASSWORD == '' || env.PLAY_UPLOAD_KEY_ALIAS == '' || env.PLAY_UPLOAD_KEY_PASSWORD == '' }}
         uses: actions/upload-artifact@v4
         with:
           name: the-treasure-release-apk-unsigned
