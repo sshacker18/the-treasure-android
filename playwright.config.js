@@ -4,8 +4,11 @@ module.exports = defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  timeout: 15000,
+  globalTimeout: 6 * 60 * 1000,
+  expect: { timeout: 5000 },
+  retries: 0,
+  workers: process.env.CI ? 4 : undefined,
   reporter: [
     ['list'],
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
