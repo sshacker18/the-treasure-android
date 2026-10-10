@@ -115,7 +115,7 @@ test('immersive gameplay keeps shell bars hidden and overlays compact controls o
     viewportHeight: el.ownerDocument.documentElement.clientHeight
   }));
   expect(gameLayout.position).toBe('absolute');
-  expect(gameLayout.hintVisible).toBe(true);
+  expect(gameLayout.hintVisible).toBe(false); // Circular joystick layout intentionally hides the old text hint.
   expect(gameLayout.canvasHeight).toBe(gameLayout.viewportHeight);
 
   // Regression guard for the former 7-second timer that restored header/footer chrome.
