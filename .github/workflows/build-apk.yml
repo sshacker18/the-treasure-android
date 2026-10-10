@@ -68,6 +68,28 @@ jobs:
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
 
+      - name: Verify packaged game assets inside debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import re
+
+          apk = Path("app/build/outputs/apk/debug/app-debug.apk")
+          assert apk.is_file() and apk.stat().st_size > 0, "Debug APK missing or empty"
+          with ZipFile(apk) as archive:
+              names = set(archive.namelist())
+              assert "assets/index.html" in names, "APK is missing assets/index.html"
+              html = archive.read("assets/index.html").decode("utf-8")
+          assert len(html) >= 80000, f"Packaged game HTML unexpectedly small: {len(html)} characters"
+          assert html.count('"html":') >= 4, "Expected four embedded chapter game payloads in APK"
+          assert "chapter-complete" in html, "Packaged game is missing chapter completion bridge"
+          print(f"Packaged game asset check passed: {len(html)} HTML characters, {html.count(chr(34) + 'html' + chr(34) + ':')} embedded chapter payloads.")
+          print(f"Debug APK size: {apk.stat().st_size} bytes")
+          PY
+
       - name: Run available unit tests
         run: gradle testDebugUnitTest --no-daemon
 
