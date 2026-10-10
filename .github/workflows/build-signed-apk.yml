@@ -96,9 +96,9 @@ jobs:
           printf '%s' "$SIGNING_CONFIG" | jq -r '.keystore_base64' | base64 --decode > "$RUNNER_TEMP/treasure-signing/treasure-qa.jks"
           test -s "$RUNNER_TEMP/treasure-signing/treasure-qa.jks"
           echo "TREASURE_KEYSTORE_PATH=$RUNNER_TEMP/treasure-signing/treasure-qa.jks" >> "$GITHUB_ENV"
-          echo "QA_KEYSTORE_PASSWORD=$(printf '%s' "$SIGNING_CONFIG" | jq -r '.keystore_password' | base64 -w 0)" >> "$GITHUB_ENV"
-          echo "QA_KEY_ALIAS=$(printf '%s' "$SIGNING_CONFIG" | jq -r '.key_alias' | base64 -w 0)" >> "$GITHUB_ENV"
-          echo "QA_KEY_PASSWORD=$(printf '%s' "$SIGNING_CONFIG" | jq -r '.key_password' | base64 -w 0)" >> "$GITHUB_ENV"
+          echo "QA_KEYSTORE_PASSWORD=$(printf '%s' "$SIGNING_CONFIG" | jq -j '.keystore_password' | base64 -w 0)" >> "$GITHUB_ENV"
+          echo "QA_KEY_ALIAS=$(printf '%s' "$SIGNING_CONFIG" | jq -j '.key_alias' | base64 -w 0)" >> "$GITHUB_ENV"
+          echo "QA_KEY_PASSWORD=$(printf '%s' "$SIGNING_CONFIG" | jq -j '.key_password' | base64 -w 0)" >> "$GITHUB_ENV"
       - name: Sign APK with persistent key
         run: |
           set -euo pipefail
