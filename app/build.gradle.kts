@@ -11,15 +11,15 @@ val canSignPlayRelease = listOf(
 ).all { !it.isNullOrBlank() }
 
 android {
-    namespace = "com.thetreasure.game"
+    namespace = "com.relic.game"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.thetreasure.game"
+        applicationId = "com.relic.game"
         minSdk = 23
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.2"
+        versionCode = 4
+        versionName = "2.0"
     }
 
     signingConfigs {
