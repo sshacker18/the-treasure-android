@@ -139,6 +139,8 @@ function applyCompactGameplayStyles(){
    #actions{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;gap:4px!important;justify-content:flex-end!important;align-items:flex-end!important}
    #actions button{font-size:8px!important;min-height:29px!important;padding:3px 6px!important}
    #overlay,#cinema,#pauseOverlay{z-index:8!important}
+   /* Keep chapter skip controls clear of the host MENU button in the top-right corner. */
+   #skip{right:76px!important;top:8px!important;}
 /* Thumb-friendly landscape gameplay controls and readable HUD. */
 .pad{grid-template-columns:40px 40px 40px!important;grid-template-rows:36px 36px!important;gap:4px!important}
 #bottom button{min-width:38px!important;min-height:34px!important;font-size:15px!important;padding:4px 8px!important}
