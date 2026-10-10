@@ -73,8 +73,7 @@ jobs:
           printf '%s' "$SIGNING_CONFIG" | jq -e '
             (.keystore_base64 | strings | length > 0) and
             (.keystore_password | strings | length > 0) and
-            (.key_alias | strings | length > 0) and
-            (.key_password | strings | length > 0)
+            (.key_alias | strings | length > 0)
           ' >/dev/null || {
             echo "::error::TREASURE_QA_KEYSTORE_BASE64 must contain the JSON signing configuration created for this workflow."
             exit 1
@@ -100,15 +99,13 @@ jobs:
           "$BUILD_TOOLS/zipalign" -f -p 4 "$APK" "$RUNNER_TEMP/the-treasure-aligned.apk"
           KEYSTORE_PASSWORD="$(printf '%s' "$SIGNING_CONFIG" | jq -j '.keystore_password')"
           KEY_ALIAS="$(printf '%s' "$SIGNING_CONFIG" | jq -j '.key_alias')"
-          KEY_PASSWORD="$(printf '%s' "$SIGNING_CONFIG" | jq -j '.key_password')"
           "$BUILD_TOOLS/apksigner" sign \
             --ks "$RUNNER_TEMP/treasure-signing/treasure-qa.jks" \
             --ks-key-alias "$KEY_ALIAS" \
             --ks-pass "pass:$KEYSTORE_PASSWORD" \
-            --key-pass "pass:$KEY_PASSWORD" \
             --out "$RUNNER_TEMP/THE-TREASURE.apk" \
             "$RUNNER_TEMP/the-treasure-aligned.apk"
-          unset KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD SIGNING_CONFIG
+          unset KEYSTORE_PASSWORD KEY_ALIAS SIGNING_CONFIG
           "$BUILD_TOOLS/apksigner" verify --verbose "$RUNNER_TEMP/THE-TREASURE.apk"
           sha256sum "$RUNNER_TEMP/THE-TREASURE.apk" | tee "$RUNNER_TEMP/SHA256SUMS.txt"
       - name: Upload the signed APK
