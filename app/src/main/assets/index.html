@@ -118,10 +118,10 @@ function loadChapter(index){
  document.getElementById('prev').disabled=current===0;
  document.getElementById('next').textContent=current===CHAPTERS.length-1?'RESTART FROM CH. 1 ↺':'NEXT CHAPTER →';
 }
-document.getElementById('begin').addEventListener('click',()=>{launched=true;intro.style.display='none';loadChapter(0);setImmersiveChrome(true);scheduleChromeHide()});
+document.getElementById('begin').addEventListener('click',()=>{launched=true;intro.style.display='none';loadChapter(0);setImmersiveChrome(true)});
 document.getElementById('openChapterMenu').addEventListener('click',()=>{
- setImmersiveChrome(false);
  document.getElementById('chapterDrawer').classList.add('open');
+ setImmersiveChrome(false);
 });
 document.getElementById('closeChapterMenu').addEventListener('click',()=>{
  document.getElementById('chapterDrawer').classList.remove('open');
