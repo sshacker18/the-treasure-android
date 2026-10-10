@@ -1,0 +1,12 @@
+{
+  "name": "the-treasure-android-qa",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Browser regression tests for THE TREASURE offline HTML game",
+  "scripts": {
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.0"
+  }
+}
