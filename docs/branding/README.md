@@ -1,43 +1,47 @@
-# Game Branding Direction — RELIC
+# RELIC — Game Branding and Identity
 
-## Decision proposal
+## Decision
 
-**Working title: RELIC**
+**Current selected title: RELIC**  
+**Runner-up: ODYSSEY**  
+**Tagline: “Some secrets should stay buried.”**
 
-RELIC is the selected working title for the current four-chapter adventure game. It emphasizes ancient artifacts, forgotten civilizations, dangerous ruins, and discovery. ODYSSEY remains the runner-up and can be revisited if the project expands toward a broader epic-journey identity.
+RELIC emphasizes ancient artifacts, forgotten civilizations, dangerous ruins, and discovery. ODYSSEY remains a strong alternate if the franchise later leans more toward an epic journey.
 
-This is a branding proposal, not yet a complete Android application rename. Do not change the Android application ID, signing identity, package name, or store listing until the title has passed name/trademark/store availability checks and the owner approves the rename.
-
-## Brand line
-
-**RELIC — Some secrets should stay buried.**
-
-## Visual direction
+## Visual identity
 
 - Cinematic ancient-jungle ruins and monumental stone architecture
 - A lone explorer facing a vast forgotten temple
-- Gold light against deep teal/blue shadows
+- Warm gold light against deep teal/blue shadows
 - Mist, waterfalls, bridges, overgrown stonework, and a mysterious glowing artifact
-- Premium adventure-game key art; legible title typography and restrained UI ornamentation
+- Premium adventure-game key art with clear title typography
 
-## Existing game structure
+## Game structure
 
-The current build has four chapters. Keep the existing chapter progression and gameplay unchanged during this branding-only phase.
+The existing game has four chapters. Keep the existing chapter progression and gameplay unchanged during this branding and package migration.
 
-## Artwork status
+## Current Android identity on this branch
 
-A new concept poster was generated for this direction in the ChatGPT conversation. The generated artwork is currently a conversation attachment; it has **not** been added as a binary file in this repository yet. The prompt used for the concept is recorded in `docs/branding/relic-key-art-prompt.md`.
+- Launcher label: `RELIC`
+- Android application ID: `com.relic.game`
+- Android namespace: `com.relic.game`
+- Version: `2.0`, versionCode `4`
+- Activity source: `app/src/main/java/com/relic/game/MainActivity.java`
 
-## Next steps before a release rename
+## Important migration warning
 
-1. Check title availability, trademarks, and app-store naming conflicts for RELIC and ODYSSEY.
-2. Approve the final title.
-3. Add optimized artwork to the repository and define the intended uses (menu background, splash screen, store listing, and social preview).
-4. Update visible app branding and version metadata in an isolated PR.
-5. Build and test the renamed app before releasing it.
+The previous application ID was `com.thetreasure.game`. Changing the application ID to `com.relic.game` creates a **separate Android app identity**. It will not upgrade the installed Treasure app, and Google Play treats it as a separate listing. Local app data does not migrate automatically.
 
-## Technical identity
+The rename is implemented on the branding feature branch for review and CI validation. Before public release, confirm whether the new Play Store listing is intended, ensure signing configuration is appropriate, and validate installation on a clean device. Do not promise in-place upgrade compatibility.
 
-Current Android package: `com.thetreasure.game`.
+## Artwork
 
-Keep this package ID unchanged for the branding proposal. Changing the app label/title does not require changing the package ID, and changing it could create a separate Play Store app identity.
+The RELIC concept poster was generated in the ChatGPT conversation. Its prompt is saved in `docs/branding/relic-key-art-prompt.md`. The binary artwork still needs to be committed as a repository asset before it can be referenced by the app or release workflow.
+
+## Before production release
+
+1. Verify title availability and trademark/store conflicts for RELIC and ODYSSEY.
+2. Add optimized artwork to the repository and define uses for the menu, splash screen, store listing, and social preview.
+3. Run CI, Playwright QA, Android builds, and physical-device regression.
+4. Confirm the new application ID / Play listing decision.
+5. Configure protected signing, build a signed AAB, and complete the Google Play release gates in the root README.
