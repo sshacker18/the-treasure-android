@@ -1,0 +1,43 @@
+name: Playwright Game QA
+
+on:
+  push:
+    branches: [main, "qa/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-qa:
+    name: Playwright gameplay and responsive QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install QA dependencies
+        run: npm install --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Prepare report directories
+        run: mkdir -p test-results/artifacts
+      - name: Run Playwright tests
+        run: npm run test:e2e
+      - name: Upload Playwright reports, traces and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: the-treasure-playwright-qa-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
