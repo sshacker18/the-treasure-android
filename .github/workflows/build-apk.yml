@@ -191,7 +191,7 @@ jobs:
           if not username or not password:
               print("EMAIL NOT SENT: configure repository Actions secrets TREASURE_SMTP_USERNAME and TREASURE_SMTP_APP_PASSWORD.")
               print("The build/test results remain available from the workflow run page.")
-              sys.exit(0)
+              sys.exit(1)
 
           repo = os.environ["REPOSITORY"]
           run_id = os.environ["RUN_ID"]
@@ -248,7 +248,7 @@ jobs:
           else:
               test_table = '<tr><td colspan="3" style="padding:8px">JUnit results unavailable; open the run and QA evidence links for actual logs.</td></tr>'
 
-          overall = "PASS" if qa == "SUCCESS" and android == "SUCCESS" and failed == 0 else "ATTENTION REQUIRED"
+          overall = "PASS" if qa == "SUCCESS" and android == "SUCCESS" and total > 0 and failed == 0 else "ATTENTION REQUIRED"
           subject = f"THE TREASURE | Run #{run_number} | {overall}"
           body = f'''<!doctype html><html><body style="font-family:Arial,sans-serif;color:#202124;line-height:1.45;max-width:900px">
           <h2 style="margin-bottom:4px">THE TREASURE — Automated QA &amp; Build Report</h2>
