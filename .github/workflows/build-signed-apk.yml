@@ -2,8 +2,6 @@ name: THE TREASURE - Signed APK Pipeline
 
 on:
   workflow_dispatch:
-  push:
-    branches: ["qa/**"]
 
 permissions:
   contents: read
