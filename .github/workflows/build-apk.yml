@@ -1,18 +1,18 @@
-name: THE TREASURE - Build, Test, and APK Artifacts
+name: RELIC - Build, Test, and APK Artifacts
 
 on:
   push:
-    branches: [main, "qa/**", "ci/**"]
+    branches: [main, "qa/**", "ci/**", "branding/**", "control/**", "audio/**"]
   pull_request:
     branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-test:
-    name: Build and validate Android APKs
+    name: Build and validate RELIC Android APKs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -35,36 +35,58 @@ jobs:
         with:
           gradle-version: "8.11.1"
 
-      - name: Validate project, version, and embedded chapter assets
+      - name: Validate project, version, package, and embedded chapter assets
         shell: bash
         run: |
           set -euo pipefail
           test -f app/build.gradle.kts
           test -f app/src/main/assets/index.html
           test -f app/src/main/AndroidManifest.xml
+          test -f app/src/main/java/com/relic/game/MainActivity.java
           python3 - <<'PY'
           from pathlib import Path
-          import re
           html = Path("app/src/main/assets/index.html").read_text()
           manifest = Path("app/src/main/AndroidManifest.xml").read_text()
           gradle = Path("app/build.gradle.kts").read_text()
+          activity = Path("app/src/main/java/com/relic/game/MainActivity.java").read_text()
 
           assert "chapter-complete" in html, "Missing chapter completion bridge"
-          chapters = re.findall(r"data-chapter=[\"']?([0-3])", html)
-          assert len(set(chapters)) == 4, f"Expected chapter menu entries 1-4, found {sorted(set(chapters))}"
-          assert re.search(r"<\\/script", html, re.IGNORECASE), "Embedded chapter script closing tags must remain escaped in wrapper source"
-          assert 'applicationId = "com.thetreasure.game"' in gradle, "Unexpected Android application ID"
-          assert re.search(r'versionCode\s*=\s*[1-9]\d*', gradle), "versionCode must be a positive integer"
-          version = re.search(r'versionName\s*=\s*"([^"]+)"', gradle)
-          assert version, "Missing versionName"
-          target = re.search(r"targetSdk\s*=\s*(\d+)", gradle)
-          assert target and int(target.group(1)) >= 36, "Android target SDK must be 36+"
-          assert re.search(r'android:label="The Treasure"', manifest), "Manifest must use the user-facing app name The Treasure"
-          print(f"Static checks passed: THE TREASURE {version.group(1)}, four chapters, target SDK {target.group(1)}.")
+          chapters = [str(i) for i in range(4) if f'data-chapter="{i}"' in html]
+          assert len(chapters) == 4, f"Expected four chapter menu entries, found {chapters}"
+          assert r"<\/script" in html.lower(), "Embedded chapter script closing tags must remain escaped"
+          assert 'applicationId = "com.relic.game"' in gradle, "Unexpected RELIC application ID"
+          assert 'namespace = "com.relic.game"' in gradle, "Unexpected RELIC namespace"
+          assert "package com.relic.game;" in activity, "Activity package must match RELIC namespace"
+          assert "versionCode = 4" in gradle, "Expected versionCode 4"
+          assert 'versionName = "2.0"' in gradle, "Expected versionName 2.0"
+          assert "targetSdk = 36" in gradle, "Android target SDK must be 36"
+          assert 'android:label="RELIC"' in manifest, "Launcher label must be RELIC"
+          print("Static checks passed: RELIC 2.0, package com.relic.game, four chapters, target SDK 36.")
           PY
 
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
+
+      - name: Verify packaged game assets inside debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          apk = Path("app/build/outputs/apk/debug/app-debug.apk")
+          assert apk.is_file() and apk.stat().st_size > 0, "Debug APK missing or empty"
+          with ZipFile(apk) as archive:
+              names = set(archive.namelist())
+              assert "assets/index.html" in names, "APK is missing assets/index.html"
+              html = archive.read("assets/index.html").decode("utf-8")
+          assert len(html) >= 80000, f"Packaged game HTML unexpectedly small: {len(html)} characters"
+          assert html.count('"html":') >= 4, "Expected four embedded chapter game payloads in APK"
+          assert "chapter-complete" in html, "Packaged game is missing chapter completion bridge"
+          print(f"Packaged game asset check passed: {len(html)} HTML characters, {html.count(chr(34) + 'html' + chr(34) + ':')} embedded chapter payloads.")
+          print(f"Debug APK size: {apk.stat().st_size} bytes")
+          PY
 
       - name: Run available unit tests
         run: gradle testDebugUnitTest --no-daemon
@@ -83,10 +105,7 @@ jobs:
           APK_DEBUG="app/build/outputs/apk/debug/app-debug.apk"
           APK_RELEASE="app/build/outputs/apk/release/app-release-unsigned.apk"
           AAB="app/build/outputs/bundle/release/app-release.aab"
-          for file in "$APK_DEBUG" "$APK_RELEASE" "$AAB"; do
-            test -s "$file"
-          done
-          # Initial lightweight budget: 50 MiB per APK. Raise only with a reviewed reason.
+          for file in "$APK_DEBUG" "$APK_RELEASE" "$AAB"; do test -s "$file"; done
           for file in "$APK_DEBUG" "$APK_RELEASE"; do
             bytes=$(stat -c%s "$file")
             if [ "$bytes" -gt 52428800 ]; then
@@ -95,8 +114,8 @@ jobs:
             fi
           done
           {
-            echo "app_name=THE TREASURE"
-            grep -E 'applicationId =|versionCode =|versionName =' app/build.gradle.kts | sed 's/^/android_config=/'
+            echo "app_name=RELIC"
+            grep -E 'applicationId =|namespace =|versionCode =|versionName =' app/build.gradle.kts | sed 's/^/android_config=/'
             echo "commit=$GITHUB_SHA"
             echo "run_id=$GITHUB_RUN_ID"
             sha256sum "$APK_DEBUG" "$APK_RELEASE" "$AAB"
@@ -104,10 +123,26 @@ jobs:
           } > build-metadata/build-manifest.txt
           cat build-metadata/build-manifest.txt
 
+      - name: Publish direct APK download as a GitHub prerelease
+        if: startsWith(github.ref, 'refs/heads/control/') && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="relic-test-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" \
+            "app/build/outputs/apk/debug/app-debug.apk#RELIC-debug.apk" \
+            "build-metadata/build-manifest.txt#build-manifest.txt" \
+            --prerelease \
+            --title "RELIC Test Build ${GITHUB_RUN_NUMBER}" \
+            --notes "Automated test build from commit ${GITHUB_SHA}. This is a debug APK for testing, not a production Play Store release. Device installation and gameplay still require manual verification."
+
       - name: Upload debug APK (rapid testing lane)
         uses: actions/upload-artifact@v4
         with:
-          name: the-treasure-debug-apk
+          name: relic-debug-apk
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             build-metadata/build-manifest.txt
@@ -117,7 +152,7 @@ jobs:
       - name: Upload unsigned release APK candidate
         uses: actions/upload-artifact@v4
         with:
-          name: the-treasure-release-apk-unsigned
+          name: relic-release-apk-unsigned
           path: |
             app/build/outputs/apk/release/app-release-unsigned.apk
             build-metadata/build-manifest.txt
@@ -127,7 +162,7 @@ jobs:
       - name: Upload unsigned AAB candidate
         uses: actions/upload-artifact@v4
         with:
-          name: the-treasure-release-bundle-unsigned
+          name: relic-release-bundle-unsigned
           path: |
             app/build/outputs/bundle/release/app-release.aab
             build-metadata/build-manifest.txt

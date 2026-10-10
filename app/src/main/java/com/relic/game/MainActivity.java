@@ -1,4 +1,4 @@
-package com.thetreasure.game;
+package com.relic.game;
 
 import android.app.Activity;
 import android.os.Bundle;

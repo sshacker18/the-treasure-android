@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "TheTreasureAndroid"
+rootProject.name = "RelicAndroid"
 include(":app")

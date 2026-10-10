@@ -1,8 +1,8 @@
 {
-  "name": "the-treasure-qa",
+  "name": "relic-qa",
   "private": true,
-  "version": "1.0.0",
-  "description": "Automated browser QA for THE TREASURE Android WebView game",
+  "version": "2.0.0",
+  "description": "Automated browser QA for the RELIC Android WebView adventure game",
   "scripts": {
     "test:e2e": "playwright test",
     "test:e2e:report": "playwright show-report"
