@@ -1,10 +1,6 @@
 name: THE TREASURE - QA and single APK
 
 on:
-  push:
-    branches: [main, "qa/**", "ci/**"]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
