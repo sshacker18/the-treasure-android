@@ -1,44 +1,61 @@
-# THE TREASURE — Android Game
+# RELIC — Android Adventure Game
 
-THE TREASURE is a four-chapter, landscape-first adventure wrapped in a native Android WebView. The game content is bundled locally so gameplay does not depend on a remote web page.
+**Tagline:** *Some secrets should stay buried.*
+
+RELIC is a four-chapter, landscape-first adventure wrapped in a native Android WebView. Game content is bundled locally so gameplay does not depend on a remote web page.
+
+## Current identity
+
+- Display name: `RELIC`
+- Android application ID: `com.relic.game`
+- Android namespace: `com.relic.game`
+- Version for this rename proposal: `2.0` (`versionCode 4`)
+- Preferred title: RELIC; ODYSSEY remains a creative runner-up.
+- Visual direction: cinematic ancient jungle ruins, lost civilizations, gold light, teal shadows, waterfalls, and a mysterious artifact.
+
+## Important package-rename warning
+
+Changing the application ID from `com.thetreasure.game` to `com.relic.game` creates a **different Android app identity**. Android will not treat it as an in-place upgrade of an installed Treasure build, and Google Play treats the new application ID as a separate app listing. Existing local app data will not migrate automatically. This branch intentionally implements the requested identity change; do not publish it until the owner confirms that a new Play Store listing is intended and signs the release with the correct key.
 
 ## Development status
 
 - Landscape and immersive system UI enabled.
-- QA branch is reducing duplicate shell chrome and adding a compact in-game chapter menu.
-- GitHub Actions validates chapter presence and Android Play target API, then produces debug and unsigned release candidates.
+- Four chapter game assets remain bundled locally.
+- GitHub Actions checks chapter presence, package/namespace alignment, launcher label, target API, embedded-script escaping, APK size, and build artifact checksums.
 - Current Play target: Android 16 / API 36.
-- Not yet Play Store release-ready: app signing, device regression, store disclosures/listing, and Play Console testing/review remain required.
+- Not yet Play Store release-ready: signed release, physical-device regression, store listing/disclosures, and Play Console testing/review remain required.
 
 ## Project structure
 
 - `app/src/main/assets/index.html` — offline game and Chapters 1–4
-- `app/src/main/java/com/thetreasure/game/MainActivity.java` — immersive Android WebView activity
-- `app/build.gradle.kts` — Android compile/target API and app version
+- `app/src/main/java/com/relic/game/MainActivity.java` — immersive Android WebView activity
+- `app/build.gradle.kts` — Android package, version, API, and signing configuration
 - `.github/workflows/build-apk.yml` — cloud build and static checks
+- `docs/branding/README.md` — brand decision and rollout notes
+- `docs/branding/relic-key-art-prompt.md` — concept-art prompt
+- `PROMPT.md` — reusable “resume latest saved work and execute” workflow prompt
 
 ## Cloud build
 
-Every push to `main` or `qa/**`, pull request targeting `main`, and manual workflow dispatch runs the CI workflow.
+Every push to `main`, `qa/**`, `ci/**`, or `branding/**`, pull request targeting `main`, and manual workflow dispatch runs the CI workflow.
 
-The workflow uploads:
-- `the-treasure-debug-apk` — debug installation artifact
-- `the-treasure-release-apk-unsigned` — unsigned release APK candidate
-- `the-treasure-release-bundle-unsigned` — unsigned Android App Bundle candidate
+Artifacts:
+- `relic-debug-apk` — debug installation artifact for testing
+- `relic-release-apk-unsigned` — unsigned release APK candidate, not for distribution
+- `relic-release-bundle-unsigned` — unsigned Android App Bundle candidate, not for Play upload
 
-Unsigned release outputs are for pipeline validation only. Do not upload them to Google Play; the Play candidate must be signed with a protected upload key and verified in Play Console.
+Unsigned release outputs are for pipeline validation only. A Play candidate must be signed with the correct protected upload key and verified in Play Console.
 
-## Music and asset licensing
+## Artwork
 
-Music assets must be bundled offline and each selected track's source, license, downloaded filename, and attribution requirements recorded. Prefer explicit CC0/public-domain game-music assets. Do not stream music from an asset marketplace in the released game or rely on a search result as proof of the exact track's license.
-
-Candidate source: [Tallbeard Studios — Free Music Loop Bundle (CC0)](https://tallbeard.itch.io/music-loop-bundle). This is a source to review; specific tracks have not yet been selected or bundled in this repository.
+The generated RELIC concept poster is saved in the original ChatGPT conversation attachment. The concept-art prompt is committed in `docs/branding/relic-key-art-prompt.md`. The binary poster has not yet been added to this repository as a tracked asset.
 
 ## Google Play release gates
 
 1. Green CI build and automated static checks.
 2. Complete manual gameplay regression across all chapters and supported Android devices.
-3. Add a protected release signing configuration and build a signed Android App Bundle.
-4. Complete store listing, app icon/screenshots/feature graphic, content rating, target audience, ads and data-safety declarations, and accessible privacy policy as applicable.
-5. Test through Play Console's internal/closed tracks. Confirm whether the account's production-access closed-test requirement applies.
-6. Submit the signed AAB for Play review and confirm rollout status before announcing availability.
+3. Decide whether the new `com.relic.game` application ID is intended as a new Play listing.
+4. Add protected release signing and build a signed Android App Bundle.
+5. Complete store listing, icon/screenshots/feature graphic, content rating, target audience, ads and data-safety declarations, and privacy policy as applicable.
+6. Test through Play Console internal/closed tracks; confirm whether the account's production-access testing requirement applies.
+7. Submit the signed AAB for review and verify rollout status before announcing availability.
