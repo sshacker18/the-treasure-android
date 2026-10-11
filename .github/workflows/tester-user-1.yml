@@ -6,6 +6,7 @@ on:
     branches:
       - feature/tap-to-move-auto-relics
       - feature/ending-flowers-tutorial
+      - feature/flowers-tutorial-main
     paths:
       - "app/**"
       - "tests/**"
