@@ -2,6 +2,10 @@ name: THE TREASURE - Android Build and Release
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - qa/playwright-allure-ci
+      - fix/launcher-icon-and-android-smoke
 
 permissions:
   contents: read
@@ -96,8 +100,15 @@ jobs:
             adb install -r release-apk/THE-TREASURE.apk
             adb shell am force-stop com.thetreasure.game
             adb shell am start -W -n com.thetreasure.game/.MainActivity
-            sleep 8
+            sleep 5
             adb shell pidof com.thetreasure.game
+            # Tap the centered START THE ADVENTURE control after the intro is rendered.
+            read -r SCREEN_W SCREEN_H <<< "$(adb shell wm size | sed -n 's/.*: \\([0-9]*\\)x\\([0-9]*\\).*/\\1 \\2/p')"
+            adb shell input tap "$((SCREEN_W / 2))" "$((SCREEN_H * 58 / 100))"
+            sleep 4
+            adb shell pidof com.thetreasure.game
+            adb shell screencap -p /sdcard/treasure-launch.png
+            adb pull /sdcard/treasure-launch.png release-apk/treasure-launch.png
             adb shell dumpsys activity activities | grep -E 'mResumedActivity.*com\.thetreasure\.game|ResumedActivity.*com\.thetreasure\.game'
             adb logcat -d -s AndroidRuntime:E chromium:E WebViewFactory:E > release-apk/launch-log.txt
             if grep -E 'FATAL EXCEPTION|Uncaught TypeError|Uncaught SyntaxError' release-apk/launch-log.txt; then
