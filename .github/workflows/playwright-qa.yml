@@ -3,6 +3,16 @@ name: Playwright Game QA (standalone)
 on:
   workflow_dispatch:
   workflow_call:
+  pull_request:
+    branches:
+      - qa/playwright-allure-ci
+    paths:
+      - "app/**"
+      - "tests/**"
+      - "package.json"
+      - "package-lock.json"
+      - "playwright.config.*"
+      - ".github/workflows/playwright-qa.yml"
   push:
     branches:
       - qa/playwright-allure-ci
