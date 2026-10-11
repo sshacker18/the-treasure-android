@@ -113,7 +113,20 @@ function loadChapter(index){
  select.value=String(current);
  label.textContent=CHAPTERS[current].label+' · '+CHAPTERS[current].subtitle;
  loading.style.display='flex';
- frame.onload=()=>{loading.style.display='none'};
+ frame.onload=()=>{
+ loading.style.display='none';
+ // The shell start button can load a chapter while its own blocking
+ // start overlay remains visible. Continue through the chapter's existing
+ // start handler so the player reaches gameplay instead of a dead-looking screen.
+ try{
+  const chapterDoc=frame.contentDocument;
+  const chapterOverlay=chapterDoc&&chapterDoc.getElementById('overlay');
+  const chapterStart=chapterDoc&&chapterDoc.getElementById('start');
+  if(chapterStart&&chapterOverlay&&!chapterOverlay.classList.contains('hidden')){
+   chapterStart.click();
+  }
+ }catch(error){console.error('Embedded chapter auto-start failed',error)}
+};
  frame.srcdoc=CHAPTERS[current].html;
  document.getElementById('prev').disabled=current===0;
  document.getElementById('next').textContent=current===CHAPTERS.length-1?'RESTART FROM CH. 1 ↺':'NEXT CHAPTER →';
