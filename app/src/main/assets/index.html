@@ -116,6 +116,16 @@ function loadChapter(index){
  frame.onload=()=>{
  loading.style.display='none';
  applyCompactGameplayStyles();
+ // START THE ADVENTURE must reach live gameplay, not stop at a second
+ // chapter overlay that looks like a frozen screen to the player.
+ try{
+  const chapterDoc=frame.contentDocument;
+  const chapterOverlay=chapterDoc&&chapterDoc.getElementById('overlay');
+  const chapterStart=chapterDoc&&chapterDoc.getElementById('start');
+  if(chapterStart&&chapterOverlay&&!chapterOverlay.classList.contains('hidden')){
+   chapterStart.click();
+  }
+ }catch(error){console.error('Embedded chapter auto-start failed',error)}
 };
 function applyCompactGameplayStyles(){
  try{
