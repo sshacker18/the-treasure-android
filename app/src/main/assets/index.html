@@ -221,7 +221,20 @@ function applyCompactGameplayStyles(){
 }
 document.getElementById('musicToggle').addEventListener('click',()=>toggleTreasureMusic());
 document.getElementById('musicToggleMenu').addEventListener('click',()=>toggleTreasureMusic());
-document.getElementById('begin').addEventListener('click',()=>{if(treasureMusic.on)startTreasureMusic();launched=true;intro.style.display='none';loadChapter(0);setImmersiveChrome(true)});
+function startAdventure(){
+ // Gameplay must start even if WebAudio is unavailable or Android blocks autoplay.
+ launched=true;
+ intro.style.display='none';
+ setImmersiveChrome(true);
+ loadChapter(0);
+ if(treasureMusic.on){
+  try{startTreasureMusic()}catch(error){console.warn('Background music could not start; continuing gameplay',error)}
+ }
+}
+document.getElementById('begin').addEventListener('click',startAdventure);
+document.getElementById('begin').addEventListener('pointerup',event=>{
+ if(!launched){event.preventDefault();startAdventure()}
+});
 document.getElementById('openChapterMenu').addEventListener('click',()=>{
  document.getElementById('chapterDrawer').classList.add('open');
  // The drawer overlays gameplay; do not restore the shell bars behind it.
