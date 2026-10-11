@@ -6,6 +6,8 @@ on:
     branches:
       - qa/playwright-allure-ci
       - fix/launcher-icon-and-android-smoke
+      - fix/music-background-resume
+      - fix/touch-controls-safe-area-v16
 
 permissions:
   contents: read
