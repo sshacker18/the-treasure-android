@@ -128,10 +128,10 @@ function shellTone(frequency,duration,volume,type,delay){
 function shellMusicTick(){
  if(!shellMusicOn||!shellAudioContext||shellAudioContext.state!=='running')return;
  const step=shellMusicStep,note=shellMelody[step%shellMelody.length];
- shellTone(note,.46,.032,'triangle');
- if(step%2===0)shellTone(note/2,.76,.019,'sine',.015);
- if(step%4===0){shellTone(note*1.5,.30,.010,'sine',.05);shellTone(note*2,.23,.008,'triangle',.08);}
- if(step%8===4)shellTone(shellMelody[(step+5)%shellMelody.length]*.75,.35,.008,'sine',.04);
+ shellTone(note,.62,.075,'triangle');
+ if(step%2===0)shellTone(note/2,.92,.052,'sine',.015);
+ if(step%4===0){shellTone(note*1.5,.42,.028,'sine',.05);shellTone(note*2,.32,.020,'triangle',.08);}
+ if(step%8===4)shellTone(shellMelody[(step+5)%shellMelody.length]*.75,.48,.024,'sine',.04);
  shellMusicStep++;
 }
 async function playShellTrack(){
@@ -202,7 +202,7 @@ function loadChapter(index){
  document.getElementById('prev').disabled=current===0;
  document.getElementById('next').textContent=current===CHAPTERS.length-1?'RESTART FROM CH. 1 ↺':'NEXT CHAPTER →';
 }
-document.getElementById('begin').addEventListener('click',()=>{launched=true;intro.style.display='none';loadChapter(0);setImmersiveChrome(true)});
+document.getElementById('begin').addEventListener('click',()=>{launched=true;intro.style.display='none';setShellMusic(true);loadChapter(0);setImmersiveChrome(true)});
 document.getElementById('openChapterMenu').addEventListener('click',event=>{
  event.preventDefault();
  document.getElementById('chapterDrawer').classList.add('open');
@@ -220,6 +220,7 @@ document.getElementById('exitImmersiveMode').addEventListener('click',()=>{
 document.querySelectorAll('#chapterDrawer [data-chapter]').forEach(button=>{
  button.addEventListener('click',()=>{
   launched=true;intro.style.display='none';
+  setShellMusic(true);
   loadChapter(Number(button.dataset.chapter));
   document.getElementById('chapterDrawer').classList.remove('open');
   setImmersiveChrome(true);
@@ -253,6 +254,6 @@ document.getElementById('showChapters').addEventListener('click',()=>openReferen
 
 document.getElementById('showHowTo').addEventListener('click',()=>openReferencePanel('howToPanel'));
 document.querySelectorAll('[data-close-panel]').forEach(b=>b.addEventListener('click',closeReferencePanels));
-document.querySelectorAll('[data-reference-chapter]').forEach(b=>b.addEventListener('click',()=>{launched=true;intro.style.display='none';loadChapter(Number(b.dataset.referenceChapter));closeReferencePanels();setImmersiveChrome(true);}));
+document.querySelectorAll('[data-reference-chapter]').forEach(b=>b.addEventListener('click',()=>{launched=true;intro.style.display='none';setShellMusic(true);loadChapter(Number(b.dataset.referenceChapter));closeReferencePanels();setImmersiveChrome(true);}));
 
 </script></body></html>
