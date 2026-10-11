@@ -57,9 +57,9 @@ jobs:
           test -f app/build.gradle.kts
           test -f app/src/main/assets/index.html
           test -f app/src/main/AndroidManifest.xml
-      - name: Build debug APK
-        run: gradle assembleDebug --no-daemon
-      - name: Sign APK with persistent key
+      - name: Build production release APK
+        run: gradle assembleRelease --no-daemon
+      - name: Sign release APK with persistent key
         env:
           SIGNING_CONFIG: ${{ secrets.TREASURE_QA_KEYSTORE_BASE64 }}
         run: |
@@ -67,7 +67,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/treasure-signing"
           printf '%s' "$SIGNING_CONFIG" | jq -j '.keystore_base64' | base64 --decode > "$RUNNER_TEMP/treasure-signing/treasure-qa.jks"
           test -s "$RUNNER_TEMP/treasure-signing/treasure-qa.jks"
-          APK="app/build/outputs/apk/debug/app-debug.apk"
+          APK="app/build/outputs/apk/release/app-release-unsigned.apk"
           BUILD_TOOLS="$ANDROID_HOME/build-tools/36.0.0"
           "$BUILD_TOOLS/zipalign" -f -p 4 "$APK" "$RUNNER_TEMP/the-treasure-aligned.apk"
           KEYSTORE_PASSWORD="$(printf '%s' "$SIGNING_CONFIG" | jq -j '.keystore_password')"
@@ -81,7 +81,7 @@ jobs:
           unset KEYSTORE_PASSWORD KEY_ALIAS SIGNING_CONFIG
           "$BUILD_TOOLS/apksigner" verify --verbose "$RUNNER_TEMP/THE-TREASURE.apk"
           sha256sum "$RUNNER_TEMP/THE-TREASURE.apk" | tee "$RUNNER_TEMP/SHA256SUMS.txt"
-      - name: Upload the signed APK
+      - name: Upload the signed production APK
         uses: actions/upload-artifact@v4
         with:
           name: THE-TREASURE-signed-APK
