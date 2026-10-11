@@ -76,10 +76,9 @@ body.playing #immersiveMenu{display:block}
 <div id="frameWrap">
  <div id="loading">Loading chapter…</div>
  <iframe id="gameFrame" title="The Treasure chapter game" allow="autoplay; fullscreen"></iframe>
- <div id="intro" class="mockup-home"><div class="home-art" aria-hidden="true"><div class="home-sun"></div><div class="home-mountains"></div><div class="home-ruins"></div><div class="home-hero"></div></div><div class="home-copy"><div class="eyebrow">AN ANCIENT WORLD. A LOST RELIC.</div><h1>THE<br><span>TREASURE</span></h1><div class="title-gem">◆</div><p>Four chapters. One forgotten secret.</p><div class="home-actions"><button id="begin" class="gold-button">▶ &nbsp; START ADVENTURE</button><button id="showChapters">▤ &nbsp; CHAPTERS</button><button id="showSettings">⚙ &nbsp; SETTINGS</button><button id="showHowTo">ⓘ &nbsp; HOW TO PLAY</button></div><div class="home-footnote">TAP TO MOVE&nbsp; · &nbsp; RELICS AUTO-COLLECT</div></div></div>
+ <div id="intro" class="mockup-home"><div class="home-art" aria-hidden="true"><div class="home-sun"></div><div class="home-mountains"></div><div class="home-ruins"></div><div class="home-hero"></div></div><div class="home-copy"><div class="eyebrow">AN ANCIENT WORLD. A LOST RELIC.</div><h1>THE<br><span>TREASURE</span></h1><div class="title-gem">◆</div><p>Four chapters. One forgotten secret.</p><div class="home-actions"><button id="begin" class="gold-button">▶ &nbsp; START ADVENTURE</button><button id="showChapters">▤ &nbsp; CHAPTERS</button><button id="showHowTo">ⓘ &nbsp; HOW TO PLAY</button></div><div class="home-footnote">TAP TO MOVE&nbsp; · &nbsp; RELICS AUTO-COLLECT</div></div></div>
  <div id="referencePanels" aria-live="polite">
   <section id="chapterSelectPanel" class="reference-panel" role="dialog" aria-modal="true" aria-label="Chapters"><div class="reference-card wide-card"><button class="back-button" data-close-panel>←</button><h2>CHAPTERS</h2><div class="chapter-grid"><button data-reference-chapter="0"><span class="chapter-art forest-art"></span><b>Chapter 1</b><span>The Lost Forest</span></button><button data-reference-chapter="1"><span class="chapter-art ruins-art"></span><b>Chapter 2</b><span>Forgotten Ruins</span></button><button data-reference-chapter="2"><span class="chapter-art temple-art"></span><b>Chapter 3</b><span>The Hidden Temple</span></button><button data-reference-chapter="3"><span class="chapter-art heart-art"></span><b>Chapter 4</b><span>The Final Relic</span></button></div></div></section>
-  <section id="settingsPanel" class="reference-panel" role="dialog" aria-modal="true" aria-label="Settings"><div class="reference-card"><button class="back-button" data-close-panel>←</button><h2>SETTINGS</h2><div class="reference-setting"><span>♫ Music</span><button id="referenceMusicToggle" aria-pressed="false">OFF</button></div><div class="reference-setting"><span>Touch controls</span><span class="setting-value">TAP TO MOVE</span></div><div class="reference-setting"><span>Auto-interact</span><span class="setting-value">ON</span></div><button data-close-panel class="gold-button">DONE</button></div></section>
   <section id="howToPanel" class="reference-panel" role="dialog" aria-modal="true" aria-label="How to play"><div class="reference-card"><button class="back-button" data-close-panel>←</button><h2>HOW TO PLAY</h2><div class="how-row"><span>◎</span><p><b>Tap to move</b><br>Tap open ground to guide Arbaaz.</p></div><div class="how-row"><span>✧</span><p><b>Auto-interact</b><br>Walk close to glowing objects to collect relics.</p></div><div class="how-row"><span>⚔</span><p><b>Defeat enemies</b><br>Watch enemy movement and stay out of danger.</p></div><div class="how-row"><span>◇</span><p><b>Explore every chapter</b><br>Follow the objective marker to discover the story.</p></div><button data-close-panel class="gold-button">GOT IT</button></div></section>
  </div>
  <div id="transition" aria-live="polite"><div><div class="eyebrow">THE TREASURE · NEXT CHAPTER</div><h2 id="transitionTitle">THE JOURNEY CONTINUES</h2><p id="transitionText">The story moves forward…</p></div></div>
@@ -207,7 +206,7 @@ document.getElementById('begin').addEventListener('click',()=>{launched=true;int
 document.getElementById('openChapterMenu').addEventListener('click',event=>{
  event.preventDefault();
  document.getElementById('chapterDrawer').classList.add('open');
- setImmersiveChrome(false);
+ // Keep the game in immersive layout while the pause drawer is open to prevent header/footer jumps.
 });
 document.getElementById('closeChapterMenu').addEventListener('click',event=>{
  event.preventDefault();
@@ -251,9 +250,9 @@ const referencePanels=document.getElementById('referencePanels');
 function openReferencePanel(id){referencePanels.classList.add('open');document.querySelectorAll('.reference-panel').forEach(p=>p.classList.toggle('active',p.id===id));}
 function closeReferencePanels(){referencePanels.classList.remove('open');document.querySelectorAll('.reference-panel').forEach(p=>p.classList.remove('active'));}
 document.getElementById('showChapters').addEventListener('click',()=>openReferencePanel('chapterSelectPanel'));
-document.getElementById('showSettings').addEventListener('click',()=>openReferencePanel('settingsPanel'));
+
 document.getElementById('showHowTo').addEventListener('click',()=>openReferencePanel('howToPanel'));
 document.querySelectorAll('[data-close-panel]').forEach(b=>b.addEventListener('click',closeReferencePanels));
 document.querySelectorAll('[data-reference-chapter]').forEach(b=>b.addEventListener('click',()=>{launched=true;intro.style.display='none';loadChapter(Number(b.dataset.referenceChapter));closeReferencePanels();setImmersiveChrome(true);}));
-document.getElementById('referenceMusicToggle').addEventListener('click',async()=>{await setShellMusic(!shellMusicOn);const b=document.getElementById('referenceMusicToggle');b.textContent=shellMusicOn?'ON':'OFF';b.setAttribute('aria-pressed',String(shellMusicOn));const main=document.getElementById('musicToggle');if(main){main.textContent=shellMusicOn?'MUSIC ON':'MUSIC OFF';main.setAttribute('aria-pressed',String(shellMusicOn));}});
+
 </script></body></html>
