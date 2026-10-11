@@ -47,7 +47,7 @@ body.playing #immersiveMenu{display:block}
 #chapterDrawer{display:none;position:absolute;inset:0;z-index:30;background:rgba(0,0,0,.78);align-items:center;justify-content:center;padding:16px}
 #chapterDrawer.open{display:flex;pointer-events:auto;touch-action:manipulation}
 #chapterDrawer .drawer-card{width:min(390px,94vw);max-height:calc(100dvh - 24px);overflow-y:auto;border:1px solid #b68b4c;border-radius:16px;padding:16px;background:linear-gradient(155deg,#20251f,#111513 72%);box-shadow:0 18px 50px rgba(0,0,0,.55);display:grid;gap:12px;overscroll-behavior:contain}
-#chapterDrawer h2{margin:0;color:#f1d29a;font-size:18px;letter-spacing:.12em}#chapterDrawer .menu-subtitle{margin-top:-7px;color:#bfc9bd;font-size:11px;line-height:1.4}#chapterDrawer .menu-section{border:1px solid rgba(196,166,111,.22);border-radius:11px;padding:10px;display:grid;gap:8px;background:rgba(255,255,255,.025)}#chapterDrawer .section-title{font-size:10px;font-weight:800;letter-spacing:.16em;color:#d8b77a;text-transform:uppercase}#chapterDrawer .setting-row{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#eee5d3;font-size:12px}#chapterDrawer .setting-note{font-size:10px;line-height:1.4;color:#aeb9ad}#chapterDrawer .chapterButtons button{background:linear-gradient(180deg,#333c31,#202720);border-color:#64745d;border-radius:8px;min-height:42px;font-size:11px;letter-spacing:.04em}#chapterDrawer .menu-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}#chapterDrawer .menu-actions button{min-height:42px}#chapterDrawer #musicToggle[aria-pressed="true"]{background:#315b3b;border-color:#9bbf83;color:#f5ffed}#chapterDrawer #closeChapterMenu{background:#8c5b24;border-color:#e4bf77;color:#fff4d8}
+#chapterDrawer h2{margin:0;color:#f1d29a;font-size:18px;letter-spacing:.12em}#chapterDrawer .menu-subtitle{margin-top:-7px;color:#bfc9bd;font-size:11px;line-height:1.4}#chapterDrawer .menu-section{border:1px solid rgba(196,166,111,.22);border-radius:11px;padding:10px;display:grid;gap:8px;background:rgba(255,255,255,.025)}#chapterDrawer .section-title{font-size:10px;font-weight:800;letter-spacing:.16em;color:#d8b77a;text-transform:uppercase}#chapterDrawer .setting-row{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#eee5d3;font-size:12px}#chapterDrawer .setting-note{font-size:10px;line-height:1.4;color:#aeb9ad}#chapterDrawer .chapterButtons button{background:linear-gradient(180deg,#333c31,#202720);border-color:#64745d;border-radius:8px;min-height:42px;font-size:11px;letter-spacing:.04em}#chapterDrawer .menu-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}#chapterDrawer .menu-actions button{min-height:42px}#chapterDrawer #closeChapterMenu{background:#8c5b24;border-color:#e4bf77;color:#fff4d8}
 #chapterDrawer .chapterButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #chapterDrawer button{padding:10px;pointer-events:auto;touch-action:manipulation}
 @media(max-height:440px){#chapterDrawer .drawer-card{padding:10px;gap:7px}#chapterDrawer button{padding:7px}}
@@ -95,11 +95,6 @@ body.playing #immersiveMenu{display:block}
      <button data-chapter="2">03 · ARCHIVE</button><button data-chapter="3">04 · HEART BELOW</button>
     </div>
    </section>
-   <section class="menu-section" aria-label="Audio settings">
-    <div class="section-title">Audio</div>
-    <div class="setting-row"><span>Background music</span><button id="musicToggle" type="button" aria-pressed="false">MUSIC OFF</button></div>
-    <div class="setting-note">Switch music on here. It can resume after Android backgrounds the game.</div>
-   </section>
    <section class="menu-section" aria-label="Controls help">
     <div class="section-title">How to play</div>
     <div class="setting-note">Tap open ground to move. Walk into glowing relics to collect them. Follow the glowing objective marker to finish each chapter.</div>
@@ -122,7 +117,7 @@ const intro=document.getElementById('intro');
 window.TREASURE_AUDIO_TRACKS = window.TREASURE_AUDIO_TRACKS || [];
 let current=0, launched=false;
 let chromeHideTimer=null;
-let shellAudioContext=null,shellTrackAudio=null,shellMusicTimer=null,shellMusicOn=false,shellMusicStep=0;
+let shellAudioContext=null,shellTrackAudio=null,shellMusicTimer=null,shellMusicOn=true,shellMusicStep=0;
 const shellMelody=[196,246.94,293.66,369.99,329.63,293.66,246.94,220,196,220,261.63,329.63,293.66,261.63,220,174.61];
 function shellTone(frequency,duration,volume,type,delay){
  if(!shellAudioContext||shellAudioContext.state!=='running')return;
@@ -156,10 +151,10 @@ async function setShellMusic(enabled){
  if(!enabled){
   shellMusicOn=false;if(shellTrackAudio){shellTrackAudio.pause();shellTrackAudio.currentTime=0;}if(shellMusicTimer){clearInterval(shellMusicTimer);shellMusicTimer=null;}
   if(shellAudioContext&&shellAudioContext.state==='running')await shellAudioContext.suspend().catch(()=>{});
-  button.setAttribute('aria-pressed','false');button.textContent='MUSIC OFF';return;
+  if(button){button.setAttribute('aria-pressed','false');button.textContent='MUSIC OFF';}return;
  }
  try{
-  shellMusicOn=true;button.setAttribute('aria-pressed','true');button.textContent='MUSIC ON';
+  shellMusicOn=true;if(button){button.setAttribute('aria-pressed','true');button.textContent='MUSIC ON';}
   // Try the bundled file immediately within the real button gesture, before awaiting AudioContext setup.
   if(window.TREASURE_AUDIO_TRACKS.length){try{if(await playShellTrack())return;}catch(trackError){console.warn('Bundled soundtrack failed; using procedural fallback',trackError);}}
   const AudioCtor=window.AudioContext||window.webkitAudioContext;
@@ -168,9 +163,9 @@ async function setShellMusic(enabled){
   await shellAudioContext.resume();
   if(shellMusicTimer)clearInterval(shellMusicTimer);
   shellMusicTick();shellMusicTimer=setInterval(shellMusicTick,520);
- }catch(error){shellMusicOn=false;button.setAttribute('aria-pressed','false');button.textContent='AUDIO UNAVAILABLE';console.warn('Background music could not start',error);}
+ }catch(error){shellMusicOn=false;if(button){button.setAttribute('aria-pressed','false');button.textContent='AUDIO UNAVAILABLE';}console.warn('Background music could not start',error);}
 }
-document.getElementById('musicToggle').addEventListener('click',()=>setShellMusic(!shellMusicOn));
+
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(shellTrackAudio)shellTrackAudio.pause();if(shellAudioContext&&shellAudioContext.state==='running')shellAudioContext.suspend().catch(()=>{});return;}if(shellMusicOn){if(window.TREASURE_AUDIO_TRACKS.length)playShellTrack().catch(()=>{});else if(shellAudioContext&&shellAudioContext.state==='suspended')shellAudioContext.resume().then(shellMusicTick).catch(()=>{});}});
 function setImmersiveChrome(active){
  document.body.classList.toggle('playing',!!active);
