@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - feature/tap-to-move-auto-relics
+      - feature/ending-flowers-tutorial
     paths:
       - "app/**"
       - "tests/**"
