@@ -179,7 +179,7 @@ function applyCompactGameplayStyles(){
   joystickStyle.id='treasure-circular-joystick-style';
   joystickStyle.textContent=`
    .pad{display:none!important}
-   #treasureJoystick{position:fixed;left:clamp(12px,3vw,26px);bottom:clamp(14px,4vh,28px);width:112px;height:112px;border-radius:50%;z-index:7;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 28%,rgba(231,189,114,.23),rgba(15,27,21,.82) 68%);border:2px solid rgba(231,189,114,.82);box-shadow:0 3px 18px #0009;touch-action:none;user-select:none;-webkit-user-select:none}
+   #treasureJoystick{position:fixed;left:clamp(12px,3vw,26px);bottom:calc(clamp(14px,4vh,28px) + env(safe-area-inset-bottom, 0px));width:112px;height:112px;border-radius:50%;z-index:7;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 28%,rgba(231,189,114,.23),rgba(15,27,21,.82) 68%);border:2px solid rgba(231,189,114,.82);box-shadow:0 3px 18px #0009;touch-action:none;user-select:none;-webkit-user-select:none}
    #treasureJoystick:before{content:'';position:absolute;inset:10px;border:1px solid rgba(255,244,214,.22);border-radius:50%;pointer-events:none}
    #treasureJoystick .treasure-stick{width:48px;height:48px;border-radius:50%;border:2px solid #f4d08b;background:radial-gradient(circle at 35% 30%,#e8c27d,#8d6028 78%);box-shadow:0 3px 8px #0009;pointer-events:none;transform:translate(0,0)}
    #bottom{padding-left:140px!important}
@@ -211,6 +211,10 @@ function applyCompactGameplayStyles(){
    joystick.addEventListener('pointermove',e=>{if(dragging){e.preventDefault();updateJoystick(e)}});
    const endJoystick=e=>{if(!dragging)return;dragging=false;releaseDirections();stick.style.transform='translate(0,0)';try{if(joystick.hasPointerCapture(e.pointerId))joystick.releasePointerCapture(e.pointerId)}catch(_){}};
    joystick.addEventListener('pointerup',endJoystick);joystick.addEventListener('pointercancel',endJoystick);joystick.addEventListener('lostpointercapture',()=>{if(dragging){dragging=false;releaseDirections();stick.style.transform='translate(0,0)'}});
+   // Never leave a direction held if Android interrupts a drag during app switching.
+   const cancelJoystick=()=>{if(dragging){dragging=false;releaseDirections();stick.style.transform='translate(0,0)'}};
+   window.addEventListener('blur',cancelJoystick);
+   doc.addEventListener('visibilitychange',()=>{if(doc.hidden)cancelJoystick()});
   }
   requestAnimationFrame(()=>{try{frame.contentWindow.dispatchEvent(new Event('resize'))}catch(_){}});
  }catch(error){console.error('Unable to apply immersive gameplay layout',error)}
