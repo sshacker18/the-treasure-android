@@ -28,6 +28,15 @@ async function chooseChapter(page, chapterNumber) {
   return game;
 }
 
+test('start screen teaches tap-to-move and Chapter 1 explains automatic relic pickup', async ({ page }) => {
+  await page.goto(gameFile);
+  await expect(page.locator('#intro')).toContainText('Quick tutorial');
+  await page.getByRole('button', { name: 'START THE ADVENTURE' }).click();
+  const game = page.frameLocator('#gameFrame');
+  await expect(game.locator('#overlay .panel')).toContainText('How to play');
+  await expect(game.locator('#overlay .panel')).toContainText('collect it automatically');
+});
+
 test('shell starts the adventure without uncaught JavaScript errors', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -60,6 +69,10 @@ for (const chapter of [1, 2, 3, 4]) {
     await expect(page.locator('#chapterLabel')).toContainText('Chapter ' + chapter);
     await expect(game.locator('canvas').first()).toBeVisible();
     await expect(game.locator('#overlay')).toHaveClass(/hidden/);
+    if (chapter === 4) {
+      await expect(game.locator('#overlay .panel')).toContainText('Final chapter tutorial');
+      await expect(game.locator('#overlay .panel')).toContainText('shockwaves');
+    }
     await expect(game.locator('.pad')).toHaveCSS('display', 'none');
     const action = game.locator('#interact, #act');
     await expect(action).toHaveCount(1);
