@@ -145,12 +145,13 @@ async function setShellMusic(enabled){
   button.setAttribute('aria-pressed','false');button.textContent='MUSIC OFF';return;
  }
  try{
+  shellMusicOn=true;button.setAttribute('aria-pressed','true');button.textContent='MUSIC ON';
+  // Try the bundled file immediately within the real button gesture, before awaiting AudioContext setup.
+  if(window.TREASURE_AUDIO_TRACKS.length){try{if(await playShellTrack())return;}catch(trackError){console.warn('Bundled soundtrack failed; using procedural fallback',trackError);}}
   const AudioCtor=window.AudioContext||window.webkitAudioContext;
   if(!AudioCtor)throw new Error('Web Audio is not supported on this device');
   if(!shellAudioContext)shellAudioContext=new AudioCtor();
   await shellAudioContext.resume();
-  shellMusicOn=true;button.setAttribute('aria-pressed','true');button.textContent='MUSIC ON';
-  if(window.TREASURE_AUDIO_TRACKS.length){try{if(await playShellTrack())return;}catch(trackError){console.warn('Bundled soundtrack failed; using procedural fallback',trackError);}}
   if(shellMusicTimer)clearInterval(shellMusicTimer);
   shellMusicTick();shellMusicTimer=setInterval(shellMusicTick,520);
  }catch(error){shellMusicOn=false;button.setAttribute('aria-pressed','false');button.textContent='AUDIO UNAVAILABLE';console.warn('Background music could not start',error);}
