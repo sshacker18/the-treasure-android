@@ -262,6 +262,22 @@ function startTreasureMusic(){
 function updateMusicButtons(){for(const id of ['musicToggle','musicToggleMenu']){const b=document.getElementById(id);if(b){b.textContent=treasureMusic.on?'♫ MUSIC ON':'♫ MUSIC OFF';b.setAttribute('aria-pressed',String(treasureMusic.on))}}if(treasureMusic.gain&&treasureMusic.ctx)treasureMusic.gain.gain.setTargetAtTime(treasureMusic.on?.42:0,treasureMusic.ctx.currentTime,.08)}
 function toggleTreasureMusic(){treasureMusic.on=!treasureMusic.on;if(treasureMusic.on)startTreasureMusic();updateMusicButtons()}
 
+// Keep WebAudio predictable when Android backgrounds/restores the WebView.
+// Suspend while hidden to avoid silent playback/resource use; resume only when music is enabled.
+document.addEventListener('visibilitychange',()=>{
+ if(!treasureMusic.ctx)return;
+ if(document.hidden){
+  if(treasureMusic.ctx.state==='running')treasureMusic.ctx.suspend().catch(()=>{});
+  return;
+ }
+ if(treasureMusic.on&&launched&&treasureMusic.ctx.state==='suspended'){
+  treasureMusic.ctx.resume().catch(()=>{});
+ }
+});
+window.addEventListener('pagehide',()=>{
+ if(treasureMusic.ctx&&treasureMusic.ctx.state==='running')treasureMusic.ctx.suspend().catch(()=>{});
+});
+
 let transitionTimer=null;
 window.addEventListener('message',event=>{
  if(event.source!==frame.contentWindow||!event.data||event.data.type!=='chapter-complete')return;
