@@ -1,0 +1,60 @@
+name: THE TREASURE - Master Release Pipeline
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "app/**"
+      - ".github/workflows/**"
+  push:
+    branches:
+      - feature/tap-to-move-auto-relics
+    paths:
+      - "app/**"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: treasure-master-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  signed-release:
+    name: Child 2 - Build, sign, and publish APK
+    uses: ./.github/workflows/build-signed-apk.yml
+    secrets: inherit
+
+  master-summary:
+    name: Master release status
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - signed-release
+    steps:
+      - name: Report pipeline result
+        env:
+          RELEASE_RESULT: ${{ needs.signed-release.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "## THE TREASURE — Master Release Pipeline"
+            echo
+            echo "- Signed production APK: **${RELEASE_RESULT}**"
+            echo
+            if [ "${RELEASE_RESULT}" = "success" ]; then
+              echo "### Result: SUCCESS"
+              echo "Download the `THE-TREASURE-signed-APK` artifact from this master run."
+            else
+              echo "### Result: NEEDS ATTENTION"
+              echo "Open the failed child job above for the first failing step."
+            fi
+            echo
+            echo "[Open this master run](${RUN_URL})"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "${RELEASE_RESULT}" != "success" ]; then
+            exit 1
+          fi
