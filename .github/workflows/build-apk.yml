@@ -103,7 +103,7 @@ jobs:
             sleep 5
             adb shell pidof com.thetreasure.game
             # Tap the centered START THE ADVENTURE control after the intro is rendered.
-            read -r SCREEN_W SCREEN_H <<< "$(adb shell wm size | sed -n 's/.*: \\([0-9]*\\)x\\([0-9]*\\).*/\\1 \\2/p')"
+            read -r SCREEN_W SCREEN_H <<< "$(adb shell wm size | sed -n 's/.*: \([0-9]*\)x\([0-9]*\).*/\1 \2/p')"
             adb shell input tap "$((SCREEN_W / 2))" "$((SCREEN_H * 58 / 100))"
             sleep 4
             adb shell pidof com.thetreasure.game
