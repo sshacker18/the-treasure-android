@@ -1,0 +1,105 @@
+name: THE TREASURE - Continuous QA and Build Gate
+
+on:
+  push:
+    branches: ["ci/**", "feat/**", "fix/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: treasure-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  playwright:
+    name: Browser gameplay regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install QA dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Validate test discovery
+        run: npx playwright test --list
+      - name: Run gameplay and responsive E2E
+        run: npm run test:e2e
+      - name: Upload Playwright evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: treasure-playwright-evidence-${{ github.run_number }}
+          path: |
+            playwright-report/
+            test-results/
+            allure-results/
+            allure-report/
+          if-no-files-found: warn
+          retention-days: 14
+
+  android:
+    name: Android build and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    needs: playwright
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platforms;android-35 platforms;android-36 build-tools;35.0.0 build-tools;36.0.0"
+          accept-android-sdk-licenses: true
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      - name: Validate Android project and content entry
+        run: |
+          set -euo pipefail
+          test -f app/build.gradle.kts
+          test -f app/src/main/AndroidManifest.xml
+          test -s app/src/main/assets/index.html
+      - name: Build debug APK and run unit tests
+        run: gradle assembleDebug testDebugUnitTest --no-daemon
+      - name: Build unsigned release candidates
+        run: gradle assembleRelease bundleRelease --no-daemon
+      - name: Verify and checksum artifacts
+        run: |
+          set -euo pipefail
+          files=(
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/release/app-release-unsigned.apk
+            app/build/outputs/bundle/release/app-release.aab
+          )
+          for file in "${files[@]}"; do test -s "$file"; done
+          mkdir -p build-metadata
+          sha256sum "${files[@]}" > build-metadata/SHA256SUMS.txt
+          cat build-metadata/SHA256SUMS.txt
+      - name: Upload Android test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: treasure-android-candidates-${{ github.run_number }}
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/release/app-release-unsigned.apk
+            app/build/outputs/bundle/release/app-release.aab
+            build-metadata/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
