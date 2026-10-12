@@ -57,6 +57,11 @@ body.playing #immersiveMenu{display:block}
  #chapterDrawer .menu-audio button{min-width:92px}
  #immersiveMenu button{min-height:42px;padding:8px 12px;font-size:12px;box-shadow:0 2px 10px #0009}
  @media(max-width:560px){#immersiveMenu{top:8px;left:8px}#chapterDrawer{padding:10px}#chapterDrawer .drawer-card{max-height:calc(100dvh - 20px);padding:14px}#chapterDrawer .menu-section{padding:8px}}
+ #chapterDrawer .drawer-close{position:absolute;right:10px;top:10px;min-width:42px;min-height:42px;font-size:20px;padding:4px;background:#382b20}
+ #chapterDrawer .menu-audio{display:flex;align-items:center;justify-content:space-between;gap:10px}
+ #chapterDrawer .menu-audio button{min-width:92px}
+ #immersiveMenu button{min-height:42px;padding:8px 12px;font-size:12px;box-shadow:0 2px 10px #0009}
+ @media(max-width:560px){#immersiveMenu{top:8px;left:8px}#chapterDrawer{padding:10px}#chapterDrawer .drawer-card{max-height:calc(100dvh - 20px);padding:14px}#chapterDrawer .menu-section{padding:8px}}
 #chapterDrawer button{padding:10px;pointer-events:auto;touch-action:manipulation}
 @media(max-height:440px){#chapterDrawer .drawer-card{padding:10px;gap:7px}#chapterDrawer button{padding:7px}}
 
@@ -96,6 +101,7 @@ body.playing #immersiveMenu{display:block}
  <div id="immersiveMenu"><button id="openChapterMenu" aria-label="Open pause and chapter menu">☰ MENU</button></div>
  <div id="chapterDrawer" role="dialog" aria-modal="true" aria-label="Game menu">
   <div class="drawer-card">
+   <button id="dismissChapterMenu" class="drawer-close" aria-label="Close menu">×</button>
    <h2>THE TREASURE</h2>
    <div class="menu-subtitle">PAUSED · Your journey is safe. Choose where to go next.</div>
    <section class="menu-section" aria-label="Journey chapters">
@@ -104,6 +110,11 @@ body.playing #immersiveMenu{display:block}
      <button data-chapter="0">01 · FOREST</button><button data-chapter="1">02 · RUINS</button>
      <button data-chapter="2">03 · ARCHIVE</button><button data-chapter="3">04 · HEART BELOW</button>
     </div>
+   </section>
+   <section class="menu-section" aria-label="Audio settings">
+    <div class="section-title">Audio</div>
+    <div class="menu-audio"><span>Background music</span><button id="drawerMusicToggle" aria-pressed="true">MUSIC ON</button></div>
+    <div class="setting-note">Tap to enable audio; it may pause when Android backgrounds the game.</div>
    </section>
    <section class="menu-section" aria-label="Controls help">
     <div class="section-title">How to play</div>
