@@ -12,7 +12,10 @@ body{display:flex;flex-direction:column;overflow:hidden;touch-action:manipulatio
 header{background:linear-gradient(110deg,#211910,#11100e);border-bottom:1px solid var(--line);padding:5px 8px;display:flex;align-items:center;gap:8px;min-height:0;flex:0 0 auto}
 .brand{min-width:0;flex:1}.brand strong{display:block;letter-spacing:.12em;font-size:11px;color:var(--gold)}.brand span{font-size:9px;color:#c5b8a4}
 select,button{background:#29231c;color:#f8f0e3;border:1px solid #6e5737;border-radius:7px;padding:6px 8px;font-size:11px;font-weight:650}
-button:active{transform:scale(.98)}\nbutton:focus-visible,select:focus-visible{outline:3px solid #f2d18d;outline-offset:3px}\nbutton:disabled{opacity:.45;cursor:not-allowed}\n@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}select{max-width:43%;min-width:104px}
+button:active{transform:scale(.98)}
+button:focus-visible,select:focus-visible{outline:3px solid #f2d18d;outline-offset:3px}
+button:disabled{opacity:.45;cursor:not-allowed}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}select{max-width:43%;min-width:104px}
 #frameWrap{position:relative;flex:1 1 0;min-height:0;background:#000;overflow:hidden}
 iframe{border:0;width:100%;height:100%;display:block;background:#000}
 footer{display:flex;gap:6px;align-items:center;justify-content:space-between;padding:4px 7px;background:#17130f;border-top:1px solid #403020;flex:0 0 auto}
@@ -51,7 +54,10 @@ body.playing #immersiveMenu{display:block}
 #chapterDrawer .chapterButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #chapterDrawer button{padding:10px;pointer-events:auto;touch-action:manipulation}
 @media(max-height:440px){#chapterDrawer .drawer-card{padding:10px;gap:7px}#chapterDrawer button{padding:7px}}
-\n/* Tap-to-move mode: hide legacy directional pad and manual interact action. */\n#up,#down,#left,#right,#interact,#act,.pad{display:none!important}\n
+
+/* Tap-to-move mode: hide legacy directional pad and manual interact action. */
+#up,#down,#left,#right,#interact,#act,.pad{display:none!important}
+
 /* Reference-mockup UI pass: cinematic title, chapter cards, settings and tutorial. */
 #intro.mockup-home{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(245px,.8fr);align-items:stretch;justify-content:stretch;padding:0;text-align:left;overflow:hidden;background:linear-gradient(110deg,#101a17 0%,#17251f 38%,#17120d 100%)}
 .home-art{position:absolute;inset:0 31% 0 0;overflow:hidden;background:linear-gradient(180deg,#eabf8a 0%,#b3c6b4 35%,#395b4b 66%,#172b22 100%)}
@@ -249,7 +255,10 @@ window.addEventListener('message',event=>{
 // Reference mockup panels: chapters, settings and tutorial.
 const referencePanels=document.getElementById('referencePanels');
 function openReferencePanel(id){referencePanels.classList.add('open');document.querySelectorAll('.reference-panel').forEach(p=>p.classList.toggle('active',p.id===id));}
-function closeReferencePanels(){referencePanels.classList.remove('open');document.querySelectorAll('.reference-panel').forEach(p=>p.classList.remove('active'));}\n// Make overlays predictable on phones: Escape closes the topmost overlay and backdrop taps dismiss panels.\ndocument.addEventListener('keydown',event=>{if(event.key==='Escape'){if(referencePanels.classList.contains('open'))closeReferencePanels();else if(document.getElementById('chapterDrawer').classList.contains('open'))document.getElementById('closeChapterMenu').click();}});\nreferencePanels.addEventListener('click',event=>{if(event.target===referencePanels)closeReferencePanels();});
+function closeReferencePanels(){referencePanels.classList.remove('open');document.querySelectorAll('.reference-panel').forEach(p=>p.classList.remove('active'));}
+// Make overlays predictable on phones: Escape closes the topmost overlay and backdrop taps dismiss panels.
+document.addEventListener('keydown',event=>{if(event.key==='Escape'){if(referencePanels.classList.contains('open'))closeReferencePanels();else if(document.getElementById('chapterDrawer').classList.contains('open'))document.getElementById('closeChapterMenu').click();}});
+referencePanels.addEventListener('click',event=>{if(event.target===referencePanels)closeReferencePanels();});
 document.getElementById('showChapters').addEventListener('click',()=>openReferencePanel('chapterSelectPanel'));
 
 document.getElementById('showHowTo').addEventListener('click',()=>openReferencePanel('howToPanel'));
