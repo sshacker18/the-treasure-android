@@ -1,4 +1,4 @@
-name: THE TREASURE - Continuous QA and Build Gate
+name: THE TREASURE - Separate Browser QA and Android Build
 
 on:
   push:
@@ -48,10 +48,9 @@ jobs:
           retention-days: 14
 
   android:
-    name: Android build and unit tests
+    name: Independent Android build and unit tests
     runs-on: ubuntu-latest
     timeout-minutes: 35
-    needs: playwright
     steps:
       - name: Checkout
         uses: actions/checkout@v4
