@@ -46,20 +46,15 @@ test('reference title screen exposes clear primary destinations without a settin
   await expect(page.locator('#intro')).toContainText('THE');
   await expect(page.getByRole('button', { name: /START ADVENTURE/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /CHAPTERS/i })).toBeVisible();
-  await expect(page.getByRole('button', { name: /SETTINGS/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /HOW TO PLAY/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /SETTINGS/i })).toHaveCount(0);
 });
 
-test('chapter cards, tutorial, and back actions work', async ({ page }) => {
+test('chapter cards and tutorial work without a settings destination', async ({ page }) => {
   await page.goto(gameFile);
   await page.getByRole('button', { name: /CHAPTERS/i }).click();
   await expect(page.locator('#chapterSelectPanel')).toBeVisible();
   await expect(page.locator('#chapterSelectPanel .chapter-grid button')).toHaveCount(4);
-  await page.getByRole('button', { name: /←/i }).first().click();
-  await page.getByRole('button', { name: /SETTINGS/i }).click();
-  await expect(page.locator('#settingsPanel')).toBeVisible();
-  await expect(page.locator('#referenceMusicToggle')).toBeVisible();
-  await page.getByRole('button', { name: /←/i }).first().click();
   await page.getByRole('button', { name: /HOW TO PLAY/i }).click();
   await expect(page.locator('#howToPanel')).toContainText('Tap to move');
   await expect(page.locator('#howToPanel')).toContainText('Auto-interact');
@@ -127,4 +122,15 @@ test('mobile viewport has no horizontal shell overflow', async ({ page }) => {
   expect(dimensions.height).toBeGreaterThan(0);
   await page.screenshot({ path: 'test-results/artifacts/mobile-start-screen.png', fullPage: true });
 });
-\ntest('tutorial panel closes with Escape and backdrop tap', async ({ page }) => {\n  await page.goto(gameFile);\n  await page.getByRole('button', { name: /HOW TO PLAY/i }).click();\n  await expect(page.locator('#howToPanel')).toBeVisible();\n  await page.keyboard.press('Escape');\n  await expect(page.locator('#referencePanels')).not.toHaveClass(/open/);\n  await page.getByRole('button', { name: /CHAPTERS/i }).click();\n  await expect(page.locator('#chapterSelectPanel')).toBeVisible();\n  await page.locator('#referencePanels').click({ position: { x: 5, y: 5 } });\n  await expect(page.locator('#referencePanels')).not.toHaveClass(/open/);\n});\n
+
+test('tutorial panel closes with Escape and backdrop tap', async ({ page }) => {
+  await page.goto(gameFile);
+  await page.getByRole('button', { name: /HOW TO PLAY/i }).click();
+  await expect(page.locator('#howToPanel')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#referencePanels')).not.toHaveClass(/open/);
+  await page.getByRole('button', { name: /CHAPTERS/i }).click();
+  await expect(page.locator('#chapterSelectPanel')).toBeVisible();
+  await page.locator('#referencePanels').click({ position: { x: 5, y: 5 } });
+  await expect(page.locator('#referencePanels')).not.toHaveClass(/open/);
+});
