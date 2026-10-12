@@ -12,7 +12,10 @@ body{display:flex;flex-direction:column;overflow:hidden;touch-action:manipulatio
 header{background:linear-gradient(110deg,#211910,#11100e);border-bottom:1px solid var(--line);padding:5px 8px;display:flex;align-items:center;gap:8px;min-height:0;flex:0 0 auto}
 .brand{min-width:0;flex:1}.brand strong{display:block;letter-spacing:.12em;font-size:11px;color:var(--gold)}.brand span{font-size:9px;color:#c5b8a4}
 select,button{background:#29231c;color:#f8f0e3;border:1px solid #6e5737;border-radius:7px;padding:6px 8px;font-size:11px;font-weight:650}
-button:active{transform:scale(.98)}select{max-width:43%;min-width:104px}
+button:active{transform:scale(.98)}
+button:focus-visible,select:focus-visible{outline:3px solid #f2d18d;outline-offset:3px}
+button:disabled{opacity:.45;cursor:not-allowed}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}select{max-width:43%;min-width:104px}
 #frameWrap{position:relative;flex:1 1 0;min-height:0;background:#000;overflow:hidden}
 iframe{border:0;width:100%;height:100%;display:block;background:#000}
 footer{display:flex;gap:6px;align-items:center;justify-content:space-between;padding:4px 7px;background:#17130f;border-top:1px solid #403020;flex:0 0 auto}
@@ -41,17 +44,44 @@ body.playing #frameWrap{position:absolute;inset:0;width:100%;height:100%;height:
 body.playing #intro{z-index:5}
 body.playing #loading{z-index:4}
 body.playing #transition{z-index:8}
-#immersiveMenu{display:none;position:absolute;top:6px;right:6px;z-index:20;background:rgba(15,12,9,.78);border:1px solid rgba(231,189,114,.5);border-radius:9px;padding:4px}
+#immersiveMenu{display:none;position:absolute;top:10px;left:10px;right:auto;z-index:25;background:rgba(15,12,9,.78);border:1px solid rgba(231,189,114,.5);border-radius:9px;padding:4px}
 body.playing #immersiveMenu{display:block}
 #immersiveMenu button{padding:5px 8px;font-size:10px;background:rgba(41,35,28,.86)}
-#chapterDrawer{display:none;position:absolute;inset:0;z-index:30;background:rgba(0,0,0,.78);align-items:center;justify-content:center;padding:16px}
+#chapterDrawer{display:none;position:absolute;inset:0;z-index:60;background:rgba(0,0,0,.78);align-items:center;justify-content:center;padding:16px}
 #chapterDrawer.open{display:flex;pointer-events:auto;touch-action:manipulation}
-#chapterDrawer .drawer-card{width:min(390px,94vw);max-height:calc(100dvh - 24px);overflow-y:auto;border:1px solid #b68b4c;border-radius:16px;padding:16px;background:linear-gradient(155deg,#20251f,#111513 72%);box-shadow:0 18px 50px rgba(0,0,0,.55);display:grid;gap:12px;overscroll-behavior:contain}
-#chapterDrawer h2{margin:0;color:#f1d29a;font-size:18px;letter-spacing:.12em}#chapterDrawer .menu-subtitle{margin-top:-7px;color:#bfc9bd;font-size:11px;line-height:1.4}#chapterDrawer .menu-section{border:1px solid rgba(196,166,111,.22);border-radius:11px;padding:10px;display:grid;gap:8px;background:rgba(255,255,255,.025)}#chapterDrawer .section-title{font-size:10px;font-weight:800;letter-spacing:.16em;color:#d8b77a;text-transform:uppercase}#chapterDrawer .setting-row{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#eee5d3;font-size:12px}#chapterDrawer .setting-note{font-size:10px;line-height:1.4;color:#aeb9ad}#chapterDrawer .chapterButtons button{background:linear-gradient(180deg,#333c31,#202720);border-color:#64745d;border-radius:8px;min-height:42px;font-size:11px;letter-spacing:.04em}#chapterDrawer .menu-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}#chapterDrawer .menu-actions button{min-height:42px}#chapterDrawer #musicToggle[aria-pressed="true"]{background:#315b3b;border-color:#9bbf83;color:#f5ffed}#chapterDrawer #closeChapterMenu{background:#8c5b24;border-color:#e4bf77;color:#fff4d8}
+#chapterDrawer .drawer-card{position:relative;width:min(520px,94vw);max-height:calc(100dvh - 32px);overflow-y:auto;border:1px solid #b68b4c;border-radius:16px;padding:16px;background:linear-gradient(155deg,#20251f,#111513 72%);box-shadow:0 18px 50px rgba(0,0,0,.55);display:grid;gap:12px;overscroll-behavior:contain}
+#chapterDrawer h2{margin:0;color:#f1d29a;font-size:18px;letter-spacing:.12em}#chapterDrawer .menu-subtitle{margin-top:-7px;color:#bfc9bd;font-size:11px;line-height:1.4}#chapterDrawer .menu-section{border:1px solid rgba(196,166,111,.22);border-radius:11px;padding:10px;display:grid;gap:8px;background:rgba(255,255,255,.025)}#chapterDrawer .section-title{font-size:10px;font-weight:800;letter-spacing:.16em;color:#d8b77a;text-transform:uppercase}#chapterDrawer .setting-row{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#eee5d3;font-size:12px}#chapterDrawer .setting-note{font-size:10px;line-height:1.4;color:#aeb9ad}#chapterDrawer .chapterButtons button{background:linear-gradient(180deg,#333c31,#202720);border-color:#64745d;border-radius:8px;min-height:42px;font-size:11px;letter-spacing:.04em}#chapterDrawer .menu-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}#chapterDrawer .menu-actions button{min-height:42px}#chapterDrawer #closeChapterMenu{background:#8c5b24;border-color:#e4bf77;color:#fff4d8}
 #chapterDrawer .chapterButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ #chapterDrawer .drawer-close{position:absolute;right:10px;top:10px;min-width:42px;min-height:42px;font-size:20px;padding:4px;background:#382b20}
+ #chapterDrawer .menu-audio{display:flex;align-items:center;justify-content:space-between;gap:10px}
+ #chapterDrawer .menu-audio button{min-width:92px}
+ #immersiveMenu button{min-height:42px;padding:8px 12px;font-size:12px;box-shadow:0 2px 10px #0009}
+ @media(max-width:560px){#immersiveMenu{top:8px;left:8px}#chapterDrawer{padding:10px}#chapterDrawer .drawer-card{max-height:calc(100dvh - 20px);padding:14px}#chapterDrawer .menu-section{padding:8px}}
+ #chapterDrawer .drawer-close{position:absolute;right:10px;top:10px;min-width:42px;min-height:42px;font-size:20px;padding:4px;background:#382b20}
+ #chapterDrawer .menu-audio{display:flex;align-items:center;justify-content:space-between;gap:10px}
+ #chapterDrawer .menu-audio button{min-width:92px}
+ #immersiveMenu button{min-height:42px;padding:8px 12px;font-size:12px;box-shadow:0 2px 10px #0009}
+ @media(max-width:560px){#immersiveMenu{top:8px;left:8px}#chapterDrawer{padding:10px}#chapterDrawer .drawer-card{max-height:calc(100dvh - 20px);padding:14px}#chapterDrawer .menu-section{padding:8px}}
 #chapterDrawer button{padding:10px;pointer-events:auto;touch-action:manipulation}
 @media(max-height:440px){#chapterDrawer .drawer-card{padding:10px;gap:7px}#chapterDrawer button{padding:7px}}
-\n/* Tap-to-move mode: hide legacy directional pad and manual interact action. */\n#up,#down,#left,#right,#interact,#act,.pad{display:none!important}\n</style></head>
+
+/* Tap-to-move mode: hide legacy directional pad and manual interact action. */
+#up,#down,#left,#right,#interact,#act,.pad{display:none!important}
+
+/* Reference-mockup UI pass: cinematic title, chapter cards, settings and tutorial. */
+#intro.mockup-home{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(245px,.8fr);align-items:stretch;justify-content:stretch;padding:0;text-align:left;overflow:hidden;background:linear-gradient(110deg,#101a17 0%,#17251f 38%,#17120d 100%)}
+.home-art{position:absolute;inset:0 31% 0 0;overflow:hidden;background:linear-gradient(180deg,#eabf8a 0%,#b3c6b4 35%,#395b4b 66%,#172b22 100%)}
+.home-sun{position:absolute;width:34vw;height:34vw;max-height:42vh;max-width:42vh;left:22%;top:8%;border-radius:50%;background:radial-gradient(circle,#fff0bf 0%,#edc17b 30%,#e5a46b00 72%);filter:blur(2px)}
+.home-mountains{position:absolute;inset:22% -10% 0;background:linear-gradient(155deg,transparent 0 18%,#718b7b 18.5% 25%,transparent 25.5%),linear-gradient(25deg,transparent 0 30%,#45695a 30.5% 48%,transparent 48.5%),linear-gradient(155deg,transparent 0 40%,#294d3e 40.5% 60%,transparent 60.5%),linear-gradient(180deg,transparent 30%,#152d23 75%)}
+.home-ruins{position:absolute;right:2%;top:12%;width:26%;height:52%;opacity:.9;background:linear-gradient(90deg,transparent 0 10%,#5b4d3a 10% 18%,transparent 18% 31%,#756044 31% 42%,transparent 42% 54%,#4b4635 54% 64%,transparent 64%),linear-gradient(180deg,transparent 0 10%,#7a6243 10% 17%,transparent 17% 28%,#574b38 28% 35%,transparent 35%);clip-path:polygon(0 32%,10% 32%,10% 0,23% 0,23% 36%,37% 36%,37% 12%,50% 12%,50% 31%,64% 31%,64% 4%,77% 4%,77% 40%,100% 40%,100% 100%,0 100%)}
+.home-hero{position:absolute;left:12%;bottom:0;width:22%;height:56%;background:linear-gradient(90deg,#171a19 0 20%,#30312b 20% 45%,#141b19 45% 70%,#771f1b 70%);clip-path:polygon(38% 0,58% 4%,68% 20%,82% 31%,100% 100%,0 100%,18% 38%,28% 22%);filter:drop-shadow(0 0 10px #111)}
+.home-copy{position:relative;z-index:1;grid-column:2;display:flex;flex-direction:column;justify-content:center;gap:9px;padding:clamp(14px,3vw,34px);background:linear-gradient(110deg,rgba(11,16,15,.82),rgba(11,12,11,.98));border-left:1px solid #b28a4c;box-shadow:-15px 0 40px #0004}
+#intro .home-copy .eyebrow{font-size:clamp(8px,1.2vw,11px);letter-spacing:.18em;color:#d7b36e}#intro .home-copy h1{font-family:Georgia,serif;font-size:clamp(27px,5.5vw,58px);letter-spacing:.07em;line-height:.92;margin:2px 0;color:#f4d38e;text-shadow:0 3px 0 #4a3019,0 8px 22px #000}#intro .home-copy h1 span{font-size:.82em}#intro .home-copy p{margin:0;font-size:clamp(10px,1.5vw,14px);color:#d7c8ad}
+.title-gem{color:#75d7e0;text-shadow:0 0 15px #54dce8;font-size:24px;line-height:1}.home-actions{display:grid;gap:6px;margin-top:5px}.home-actions button{min-height:36px;text-align:left;padding:8px 12px;border-radius:5px;background:linear-gradient(100deg,#222b29,#121816);border-color:#6c5a3e;font-family:Georgia,serif;font-size:clamp(10px,1.4vw,13px);letter-spacing:.03em}.home-actions .gold-button,.gold-button{background:linear-gradient(180deg,#f0c56c,#b77a2e)!important;color:#21170b!important;border-color:#ffe0a0!important}.home-footnote{font-size:8px;letter-spacing:.12em;color:#b3ad9f;margin-top:3px}
+#referencePanels{display:none;position:absolute;inset:0;z-index:40;background:rgba(5,8,8,.92);backdrop-filter:blur(7px);align-items:center;justify-content:center;padding:12px}#referencePanels.open{display:flex}.reference-panel{display:none;width:100%;height:100%;align-items:center;justify-content:center}.reference-panel.active{display:flex}.reference-card{position:relative;width:min(430px,96vw);max-height:calc(100dvh - 24px);overflow:auto;padding:22px;border:1px solid #a98044;border-radius:9px;background:linear-gradient(145deg,#101b1b,#080d0d);box-shadow:0 20px 65px #000b;display:grid;gap:13px}.reference-card h2{margin:0;text-align:center;font:clamp(17px,3vw,24px) Georgia,serif;letter-spacing:.15em;color:#f1d08c}.wide-card{width:min(900px,98vw)}.back-button{position:absolute;left:12px;top:12px;min-width:36px;min-height:32px;padding:4px 8px;background:#17211f}.chapter-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:8px}.chapter-grid button{padding:0 0 10px;overflow:hidden;display:flex;flex-direction:column;gap:6px;background:#101716;border-color:#8b693b;border-radius:5px;min-width:0;font-family:Georgia,serif}.chapter-grid button b{font-size:clamp(10px,1.6vw,14px)}.chapter-grid button>span:last-child{font-size:clamp(9px,1.35vw,12px);font-weight:400;color:#e5d8c2}.chapter-art{display:block;width:100%;height:clamp(90px,22vh,190px);background:linear-gradient(180deg,#6e9c90,#173e32 65%,#0d1b16)}.ruins-art{background:linear-gradient(150deg,#efc38a,#9e7b50 45%,#29382e 75%,#121b17)}.temple-art{background:linear-gradient(180deg,#173f49,#071b20 48%,#4e7e85 70%,#101b1b)}.heart-art{background:radial-gradient(ellipse at 50% 48%,#ff9a3b 0,#79321d 22%,#241411 55%,#090b0a 80%)}.reference-setting{display:flex;justify-content:space-between;align-items:center;padding:12px 2px;border-bottom:1px solid #35403a;font-size:13px}.reference-setting button{min-width:72px}.setting-value{color:#d8bd80;font-size:10px;letter-spacing:.08em}.how-row{display:flex;align-items:center;gap:12px;border-bottom:1px solid #2b3832;padding:5px 0}.how-row>span{font-size:24px;color:#f0ca79;width:34px;text-align:center}.how-row p{margin:0;color:#bfc9c0;font-size:11px;line-height:1.5}.how-row b{color:#f6ead4;font-size:12px}
+@media(max-width:560px){#intro.mockup-home{grid-template-columns:1fr;grid-template-rows:1fr auto}.home-art{inset:0 0 37% 0}.home-copy{grid-column:1;align-self:end;padding:12px 16px 10px;gap:5px;border-left:0;border-top:1px solid #b28a4c;background:linear-gradient(180deg,rgba(10,15,13,.9),#090d0c)}#intro .home-copy h1{font-size:clamp(24px,7vw,36px)}.home-actions{grid-template-columns:1fr 1fr;gap:5px}.home-actions button{min-height:32px;padding:6px 8px}.home-footnote{display:none}.chapter-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.chapter-art{height:clamp(68px,14vh,110px)}.reference-card{padding:18px 12px}.wide-card{padding-top:42px}}
+@media(max-height:440px){#intro.mockup-home{grid-template-columns:minmax(0,1.1fr) minmax(220px,.9fr)}.home-art{inset:0 33% 0 0}.home-copy{grid-column:2;padding:8px 14px;gap:4px}.home-hero{height:60%}.home-actions{gap:4px}.home-actions button{min-height:27px;padding:4px 8px}.title-gem{font-size:15px}.chapter-art{height:90px}.reference-card{padding:12px;gap:8px}}
+</style></head>
 <body>
 <header id="shellHeader">
  <div class="brand"><strong>THE TREASURE</strong><span>Complete adventure · Chapters 1–4</span></div>
@@ -62,16 +92,16 @@ body.playing #immersiveMenu{display:block}
 <div id="frameWrap">
  <div id="loading">Loading chapter…</div>
  <iframe id="gameFrame" title="The Treasure chapter game" allow="autoplay; fullscreen"></iframe>
- <div id="intro"><div class="card">
-  <div class="eyebrow">A FOUR-CHAPTER ADVENTURE</div>
-  <h1>THE<br>TREASURE</h1>
-  <p>From the first discovery to the Heart Below. <b>Quick tutorial:</b> tap the ground to move, and reach glowing relics to collect them automatically. Use ☰ MENU to pause or change chapters.</p>
-  <button id="begin">START THE ADVENTURE</button>
- </div></div>
+ <div id="intro" class="mockup-home"><div class="home-art" aria-hidden="true"><div class="home-sun"></div><div class="home-mountains"></div><div class="home-ruins"></div><div class="home-hero"></div></div><div class="home-copy"><div class="eyebrow">AN ANCIENT WORLD. A LOST RELIC.</div><h1>THE<br><span>TREASURE</span></h1><div class="title-gem">◆</div><p>Four chapters. One forgotten secret. Find the relics, protect your companions, and uncover what lies beneath the ruins.</p><div class="home-actions"><button id="begin" class="gold-button">▶ &nbsp; START ADVENTURE</button><button id="showChapters">▤ &nbsp; CHAPTERS</button><button id="showHowTo">ⓘ &nbsp; HOW TO PLAY</button></div><div class="home-footnote">TAP TO MOVE&nbsp; · &nbsp; RELICS AUTO-COLLECT</div></div></div>
+ <div id="referencePanels" aria-live="polite">
+  <section id="chapterSelectPanel" class="reference-panel" role="dialog" aria-modal="true" aria-label="Chapters"><div class="reference-card wide-card"><button class="back-button" data-close-panel>←</button><h2>CHAPTERS</h2><div class="chapter-grid"><button data-reference-chapter="0"><span class="chapter-art forest-art"></span><b>Chapter 1</b><span>The Lost Forest</span></button><button data-reference-chapter="1"><span class="chapter-art ruins-art"></span><b>Chapter 2</b><span>Forgotten Ruins</span></button><button data-reference-chapter="2"><span class="chapter-art temple-art"></span><b>Chapter 3</b><span>The Hidden Temple</span></button><button data-reference-chapter="3"><span class="chapter-art heart-art"></span><b>Chapter 4</b><span>The Final Relic</span></button></div></div></section>
+  <section id="howToPanel" class="reference-panel" role="dialog" aria-modal="true" aria-label="How to play"><div class="reference-card"><button class="back-button" data-close-panel>←</button><h2>HOW TO PLAY</h2><div class="how-row"><span>◎</span><p><b>Tap to move</b><br>Tap open ground to guide Arbaaz.</p></div><div class="how-row"><span>✧</span><p><b>Auto-interact</b><br>Walk close to glowing objects to collect relics.</p></div><div class="how-row"><span>⚔</span><p><b>Defeat enemies</b><br>Watch enemy movement and stay out of danger.</p></div><div class="how-row"><span>◇</span><p><b>Explore every chapter</b><br>Follow the objective marker to discover the story.</p></div><button data-close-panel class="gold-button">GOT IT</button></div></section>
+ </div>
  <div id="transition" aria-live="polite"><div><div class="eyebrow">THE TREASURE · NEXT CHAPTER</div><h2 id="transitionTitle">THE JOURNEY CONTINUES</h2><p id="transitionText">The story moves forward…</p></div></div>
  <div id="immersiveMenu"><button id="openChapterMenu" aria-label="Open pause and chapter menu">☰ MENU</button></div>
  <div id="chapterDrawer" role="dialog" aria-modal="true" aria-label="Game menu">
   <div class="drawer-card">
+   <button id="dismissChapterMenu" class="drawer-close" aria-label="Close menu">×</button>
    <h2>THE TREASURE</h2>
    <div class="menu-subtitle">PAUSED · Your journey is safe. Choose where to go next.</div>
    <section class="menu-section" aria-label="Journey chapters">
@@ -83,8 +113,8 @@ body.playing #immersiveMenu{display:block}
    </section>
    <section class="menu-section" aria-label="Audio settings">
     <div class="section-title">Audio</div>
-    <div class="setting-row"><span>Background music</span><button id="musicToggle" type="button" aria-pressed="false">MUSIC OFF</button></div>
-    <div class="setting-note">Switch music on here. It can resume after Android backgrounds the game.</div>
+    <div class="menu-audio"><span>Background music</span><button id="drawerMusicToggle" aria-pressed="true">MUSIC ON</button></div>
+    <div class="setting-note">Tap to enable audio; it may pause when Android backgrounds the game.</div>
    </section>
    <section class="menu-section" aria-label="Controls help">
     <div class="section-title">How to play</div>
@@ -108,7 +138,7 @@ const intro=document.getElementById('intro');
 window.TREASURE_AUDIO_TRACKS = window.TREASURE_AUDIO_TRACKS || [];
 let current=0, launched=false;
 let chromeHideTimer=null;
-let shellAudioContext=null,shellTrackAudio=null,shellMusicTimer=null,shellMusicOn=false,shellMusicStep=0;
+let shellAudioContext=null,shellTrackAudio=null,shellMusicTimer=null,shellMusicOn=true,shellMusicStep=0;
 const shellMelody=[196,246.94,293.66,369.99,329.63,293.66,246.94,220,196,220,261.63,329.63,293.66,261.63,220,174.61];
 function shellTone(frequency,duration,volume,type,delay){
  if(!shellAudioContext||shellAudioContext.state!=='running')return;
@@ -120,10 +150,10 @@ function shellTone(frequency,duration,volume,type,delay){
 function shellMusicTick(){
  if(!shellMusicOn||!shellAudioContext||shellAudioContext.state!=='running')return;
  const step=shellMusicStep,note=shellMelody[step%shellMelody.length];
- shellTone(note,.46,.032,'triangle');
- if(step%2===0)shellTone(note/2,.76,.019,'sine',.015);
- if(step%4===0){shellTone(note*1.5,.30,.010,'sine',.05);shellTone(note*2,.23,.008,'triangle',.08);}
- if(step%8===4)shellTone(shellMelody[(step+5)%shellMelody.length]*.75,.35,.008,'sine',.04);
+ shellTone(note,.62,.075,'triangle');
+ if(step%2===0)shellTone(note/2,.92,.052,'sine',.015);
+ if(step%4===0){shellTone(note*1.5,.42,.028,'sine',.05);shellTone(note*2,.32,.020,'triangle',.08);}
+ if(step%8===4)shellTone(shellMelody[(step+5)%shellMelody.length]*.75,.48,.024,'sine',.04);
  shellMusicStep++;
 }
 async function playShellTrack(){
@@ -142,10 +172,10 @@ async function setShellMusic(enabled){
  if(!enabled){
   shellMusicOn=false;if(shellTrackAudio){shellTrackAudio.pause();shellTrackAudio.currentTime=0;}if(shellMusicTimer){clearInterval(shellMusicTimer);shellMusicTimer=null;}
   if(shellAudioContext&&shellAudioContext.state==='running')await shellAudioContext.suspend().catch(()=>{});
-  button.setAttribute('aria-pressed','false');button.textContent='MUSIC OFF';return;
+  if(button){button.setAttribute('aria-pressed','false');button.textContent='MUSIC OFF';}return;
  }
  try{
-  shellMusicOn=true;button.setAttribute('aria-pressed','true');button.textContent='MUSIC ON';
+  shellMusicOn=true;if(button){button.setAttribute('aria-pressed','true');button.textContent='MUSIC ON';}
   // Try the bundled file immediately within the real button gesture, before awaiting AudioContext setup.
   if(window.TREASURE_AUDIO_TRACKS.length){try{if(await playShellTrack())return;}catch(trackError){console.warn('Bundled soundtrack failed; using procedural fallback',trackError);}}
   const AudioCtor=window.AudioContext||window.webkitAudioContext;
@@ -154,9 +184,9 @@ async function setShellMusic(enabled){
   await shellAudioContext.resume();
   if(shellMusicTimer)clearInterval(shellMusicTimer);
   shellMusicTick();shellMusicTimer=setInterval(shellMusicTick,520);
- }catch(error){shellMusicOn=false;button.setAttribute('aria-pressed','false');button.textContent='AUDIO UNAVAILABLE';console.warn('Background music could not start',error);}
+ }catch(error){shellMusicOn=false;if(button){button.setAttribute('aria-pressed','false');button.textContent='AUDIO UNAVAILABLE';}console.warn('Background music could not start',error);}
 }
-document.getElementById('musicToggle').addEventListener('click',()=>setShellMusic(!shellMusicOn));
+
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(shellTrackAudio)shellTrackAudio.pause();if(shellAudioContext&&shellAudioContext.state==='running')shellAudioContext.suspend().catch(()=>{});return;}if(shellMusicOn){if(window.TREASURE_AUDIO_TRACKS.length)playShellTrack().catch(()=>{});else if(shellAudioContext&&shellAudioContext.state==='suspended')shellAudioContext.resume().then(shellMusicTick).catch(()=>{});}});
 function setImmersiveChrome(active){
  document.body.classList.toggle('playing',!!active);
@@ -194,11 +224,11 @@ function loadChapter(index){
  document.getElementById('prev').disabled=current===0;
  document.getElementById('next').textContent=current===CHAPTERS.length-1?'RESTART FROM CH. 1 ↺':'NEXT CHAPTER →';
 }
-document.getElementById('begin').addEventListener('click',()=>{launched=true;intro.style.display='none';loadChapter(0);setImmersiveChrome(true)});
+document.getElementById('begin').addEventListener('click',()=>{launched=true;intro.style.display='none';setShellMusic(true);loadChapter(0);setImmersiveChrome(true)});
 document.getElementById('openChapterMenu').addEventListener('click',event=>{
  event.preventDefault();
  document.getElementById('chapterDrawer').classList.add('open');
- setImmersiveChrome(false);
+ // Keep the game in immersive layout while the pause drawer is open to prevent header/footer jumps.
 });
 document.getElementById('closeChapterMenu').addEventListener('click',event=>{
  event.preventDefault();
@@ -212,6 +242,7 @@ document.getElementById('exitImmersiveMode').addEventListener('click',()=>{
 document.querySelectorAll('#chapterDrawer [data-chapter]').forEach(button=>{
  button.addEventListener('click',()=>{
   launched=true;intro.style.display='none';
+  setShellMusic(true);
   loadChapter(Number(button.dataset.chapter));
   document.getElementById('chapterDrawer').classList.remove('open');
   setImmersiveChrome(true);
@@ -236,4 +267,18 @@ window.addEventListener('message',event=>{
    setTimeout(()=>{transition.style.display='none'},1000);
  },3600);
 });
+
+// Reference mockup panels: chapters, settings and tutorial.
+const referencePanels=document.getElementById('referencePanels');
+function openReferencePanel(id){referencePanels.classList.add('open');document.querySelectorAll('.reference-panel').forEach(p=>p.classList.toggle('active',p.id===id));}
+function closeReferencePanels(){referencePanels.classList.remove('open');document.querySelectorAll('.reference-panel').forEach(p=>p.classList.remove('active'));}
+// Make overlays predictable on phones: Escape closes the topmost overlay and backdrop taps dismiss panels.
+document.addEventListener('keydown',event=>{if(event.key==='Escape'){if(referencePanels.classList.contains('open'))closeReferencePanels();else if(document.getElementById('chapterDrawer').classList.contains('open'))document.getElementById('closeChapterMenu').click();}});
+referencePanels.addEventListener('click',event=>{if(event.target===referencePanels)closeReferencePanels();});
+document.getElementById('showChapters').addEventListener('click',()=>openReferencePanel('chapterSelectPanel'));
+
+document.getElementById('showHowTo').addEventListener('click',()=>openReferencePanel('howToPanel'));
+document.querySelectorAll('[data-close-panel]').forEach(b=>b.addEventListener('click',closeReferencePanels));
+document.querySelectorAll('[data-reference-chapter]').forEach(b=>b.addEventListener('click',()=>{launched=true;intro.style.display='none';setShellMusic(true);loadChapter(Number(b.dataset.referenceChapter));closeReferencePanels();setImmersiveChrome(true);}));
+
 </script></body></html>

@@ -4,8 +4,8 @@ const gameFile = 'file://' + path.resolve('app/src/main/assets/index.html');
 
 async function startAdventure(page) {
   await page.goto(gameFile);
-  await expect(page.getByRole('button', { name: 'START THE ADVENTURE' })).toBeVisible();
-  await page.getByRole('button', { name: 'START THE ADVENTURE' }).click();
+  await expect(page.getByRole('button', { name: /START ADVENTURE/i })).toBeVisible();
+  await page.getByRole('button', { name: /START ADVENTURE/i }).click();
   await expect(page.locator('#intro')).toBeHidden();
   await expect(page.locator('#loading')).toBeHidden();
   const game = page.frameLocator('#gameFrame');
@@ -16,9 +16,21 @@ async function startAdventure(page) {
 }
 
 async function chooseChapter(page, chapterNumber) {
-  await page.getByRole('button', { name: 'Open pause and chapter menu' }).click();
-  await expect(page.locator('#chapterDrawer')).toHaveClass(/open/);
-  await page.locator('#chapterDrawer').getByRole('button', { name: 'CHAPTER ' + chapterNumber, exact: true }).click();
+  const chapterNames = {
+    1: /01\s*[·.]\s*FOREST/i,
+    2: /02\s*[·.]\s*RUINS/i,
+    3: /03\s*[·.]\s*ARCHIVE/i,
+    4: /04\s*[·.]\s*HEART BELOW/i
+  };
+  if (await page.locator('#intro').isVisible()) {
+    await page.getByRole('button', { name: /CHAPTERS/i }).click();
+    await expect(page.locator('#chapterSelectPanel')).toBeVisible();
+    await page.locator('#chapterSelectPanel').getByRole('button', { name: new RegExp('Chapter ' + chapterNumber, 'i') }).click();
+  } else {
+    await page.getByRole('button', { name: 'Open pause and chapter menu' }).click();
+    await expect(page.locator('#chapterDrawer')).toHaveClass(/open/);
+    await page.locator('#chapterDrawer').getByRole('button', { name: chapterNames[chapterNumber] }).click();
+  }
   await expect(page.locator('#loading')).toBeHidden();
   await expect(page.locator('#chapterLabel')).toContainText('Chapter ' + chapterNumber);
   const game = page.frameLocator('#gameFrame');
@@ -28,13 +40,26 @@ async function chooseChapter(page, chapterNumber) {
   return game;
 }
 
-test('start screen teaches tap-to-move and Chapter 1 explains automatic relic pickup', async ({ page }) => {
+test('reference title screen exposes clear primary destinations without a settings menu', async ({ page }) => {
   await page.goto(gameFile);
-  await expect(page.locator('#intro')).toContainText('Quick tutorial');
-  await page.getByRole('button', { name: 'START THE ADVENTURE' }).click();
-  const game = page.frameLocator('#gameFrame');
-  await expect(game.locator('#overlay .panel')).toContainText('How to play');
-  await expect(game.locator('#overlay .panel')).toContainText('collect it automatically');
+  await expect(page.locator('#intro')).toBeVisible();
+  await expect(page.locator('#intro')).toContainText('THE');
+  await expect(page.getByRole('button', { name: /START ADVENTURE/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /CHAPTERS/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /HOW TO PLAY/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /SETTINGS/i })).toHaveCount(0);
+});
+
+test('chapter cards and tutorial work without a settings destination', async ({ page }) => {
+  await page.goto(gameFile);
+  await page.getByRole('button', { name: /CHAPTERS/i }).click();
+  await expect(page.locator('#chapterSelectPanel')).toBeVisible();
+  await expect(page.locator('#chapterSelectPanel .chapter-grid button')).toHaveCount(4);
+  await page.locator('#chapterSelectPanel [data-close-panel]').click();
+  await expect(page.locator('#referencePanels')).not.toHaveClass(/open/);
+  await page.getByRole('button', { name: /HOW TO PLAY/i }).click();
+  await expect(page.locator('#howToPanel')).toContainText('Tap to move');
+  await expect(page.locator('#howToPanel')).toContainText('Auto-interact');
 });
 
 test('shell starts the adventure without uncaught JavaScript errors', async ({ page }) => {
@@ -62,17 +87,11 @@ test('tapping a relic destination moves the player and auto-collects the relic',
 
 for (const chapter of [1, 2, 3, 4]) {
   test(`Chapter ${chapter} smoke: loads, starts, and keeps manual controls hidden`, async ({ page }) => {
-    const game = chapter === 1 ? await startAdventure(page) : await (async () => {
-      await startAdventure(page);
-      return chooseChapter(page, chapter);
-    })();
+    await startAdventure(page);
+    const game = chapter === 1 ? page.frameLocator('#gameFrame') : await chooseChapter(page, chapter);
     await expect(page.locator('#chapterLabel')).toContainText('Chapter ' + chapter);
     await expect(game.locator('canvas').first()).toBeVisible();
     await expect(game.locator('#overlay')).toHaveClass(/hidden/);
-    if (chapter === 4) {
-      await expect(game.locator('#overlay .panel')).toContainText('Final chapter tutorial');
-      await expect(game.locator('#overlay .panel')).toContainText('shockwaves');
-    }
     await expect(game.locator('.pad')).toHaveCSS('display', 'none');
     const action = game.locator('#interact, #act');
     await expect(action).toHaveCount(1);
@@ -84,12 +103,12 @@ for (const chapter of [1, 2, 3, 4]) {
   });
 }
 
-test('chapter menu switches chapters and resumes cleanly', async ({ page }) => {
+test('pause menu switches chapters and resumes cleanly', async ({ page }) => {
   await startAdventure(page);
   await chooseChapter(page, 3);
   await page.getByRole('button', { name: 'Open pause and chapter menu' }).click();
   await expect(page.locator('#chapterDrawer')).toHaveClass(/open/);
-  await page.getByRole('button', { name: 'RESUME GAME' }).click();
+  await page.getByRole('button', { name: /RESUME GAME/i }).click();
   await expect(page.locator('#chapterDrawer')).not.toHaveClass(/open/);
 });
 
@@ -104,4 +123,16 @@ test('mobile viewport has no horizontal shell overflow', async ({ page }) => {
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.width);
   expect(dimensions.height).toBeGreaterThan(0);
   await page.screenshot({ path: 'test-results/artifacts/mobile-start-screen.png', fullPage: true });
+});
+
+test('tutorial panel closes with Escape and backdrop tap', async ({ page }) => {
+  await page.goto(gameFile);
+  await page.getByRole('button', { name: /HOW TO PLAY/i }).click();
+  await expect(page.locator('#howToPanel')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#referencePanels')).not.toHaveClass(/open/);
+  await page.getByRole('button', { name: /CHAPTERS/i }).click();
+  await expect(page.locator('#chapterSelectPanel')).toBeVisible();
+  await page.locator('#referencePanels').click({ position: { x: 5, y: 5 } });
+  await expect(page.locator('#referencePanels')).not.toHaveClass(/open/);
 });
