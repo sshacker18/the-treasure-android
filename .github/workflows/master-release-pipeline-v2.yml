@@ -55,8 +55,8 @@ jobs:
           chapters = set(re.findall(r'data-chapter="([0-3])"', html))
           assert len(chapters) == 4, f"Expected four chapter entries; found {sorted(chapters)}"
           assert "START ADVENTURE" in html, "Start action label missing"
-          assert "\\\\n" not in html.split("</style>", 1)[0], "Literal escaped newlines in CSS can invalidate shell styling"
-          assert "\\\\n// Make overlays predictable" not in html, "Literal escaped newlines in shell JavaScript can break script parsing"
+          assert "\\n" not in html.split("</style>", 1)[0], "Literal escaped newlines in CSS can invalidate shell styling"
+          assert "\\n// Make overlays predictable" not in html, "Literal escaped newlines in shell JavaScript can break script parsing"
           assert "gameFrame" in html, "Game frame integration missing"
           print(f"Preflight passed: versionCode={code.group(1)}, versionName={name.group(1)}, four chapter entries.")
           PY
