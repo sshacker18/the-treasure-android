@@ -43,8 +43,8 @@ jobs:
           gradle = Path("app/build.gradle.kts").read_text()
           manifest = Path("app/src/main/AndroidManifest.xml").read_text()
           html = Path("app/src/main/assets/index.html").read_text()
-          code = re.search(r"versionCode\\s*=\\s*(\\d+)", gradle)
-          name = re.search(r'versionName\\s*=\\s*"([^"]+)"', gradle)
+          code = re.search(r"versionCode\s*=\s*(\d+)", gradle)
+          name = re.search(r'versionName\s*=\s*"([^"]+)"', gradle)
           assert code and int(code.group(1)) > 0, "versionCode must be a positive integer"
           assert name and name.group(1).strip(), "versionName must be present"
           assert 'applicationId = "com.thetreasure.game"' in gradle, "Unexpected applicationId"
@@ -52,7 +52,7 @@ jobs:
           assert 'android.intent.action.MAIN' in manifest, "Launcher MAIN intent missing"
           assert 'android.intent.category.LAUNCHER' in manifest, "Launcher category missing"
           assert "chapter-complete" in html, "Missing chapter completion bridge"
-          chapters = set(re.findall(r"data-chapter=[\\"']?([0-3])", html))
+          chapters = set(re.findall(r'data-chapter="([0-3])"', html))
           assert len(chapters) == 4, f"Expected four chapter entries; found {sorted(chapters)}"
           assert "START ADVENTURE" in html, "Start action label missing"
           assert "gameFrame" in html, "Game frame integration missing"
