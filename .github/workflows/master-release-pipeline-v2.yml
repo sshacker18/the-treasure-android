@@ -43,8 +43,8 @@ jobs:
           gradle = Path("app/build.gradle.kts").read_text()
           manifest = Path("app/src/main/AndroidManifest.xml").read_text()
           html = Path("app/src/main/assets/index.html").read_text()
-          code = re.search(r"versionCode\s*=\s*(\d+)", gradle)
-          name = re.search(r'versionName\s*=\s*"([^"]+)"', gradle)
+          code = re.search(r"versionCode\\s*=\\s*(\\d+)", gradle)
+          name = re.search(r'versionName\\s*=\\s*"([^"]+)"', gradle)
           assert code and int(code.group(1)) > 0, "versionCode must be a positive integer"
           assert name and name.group(1).strip(), "versionName must be present"
           assert 'applicationId = "com.thetreasure.game"' in gradle, "Unexpected applicationId"
@@ -55,7 +55,7 @@ jobs:
           chapters = set(re.findall(r'data-chapter="([0-3])"', html))
           assert len(chapters) == 4, f"Expected four chapter entries; found {sorted(chapters)}"
           assert "START ADVENTURE" in html, "Start action label missing"
-          assert "\\n// Make overlays predictable" not in html, "Literal escaped newlines in shell JavaScript can break script parsing"
+          assert "\\\\n// Make overlays predictable" not in html, "Literal escaped newlines in shell JavaScript can break script parsing"
           assert "gameFrame" in html, "Game frame integration missing"
           print(f"Preflight passed: versionCode={code.group(1)}, versionName={name.group(1)}, four chapter entries.")
           PY
@@ -112,9 +112,9 @@ jobs:
             sleep 8
             adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | grep 'com.thetreasure.game'
             CRASH_LOG="$(adb logcat -d -t 3000 | grep -E 'FATAL EXCEPTION|Fatal signal' || true)"
-            if printf '%s\n' "$CRASH_LOG" | grep -q 'com.thetreasure.game'; then
+            if printf '%s\\n' "$CRASH_LOG" | grep -q 'com.thetreasure.game'; then
               echo "::error::App crash signature detected after launch."
-              printf '%s\n' "$CRASH_LOG"
+              printf '%s\\n' "$CRASH_LOG"
               exit 1
             fi
             adb shell pm path com.thetreasure.game
