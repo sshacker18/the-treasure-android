@@ -18,8 +18,8 @@ android {
         applicationId = "com.thetreasure.game"
         minSdk = 23
         targetSdk = 36
-        versionCode = 6
-        versionName = "2.0"
+        versionCode = 7
+        versionName = "4.5"
     }
 
     signingConfigs {
