@@ -55,6 +55,8 @@ test('chapter cards and tutorial work without a settings destination', async ({ 
   await page.getByRole('button', { name: /CHAPTERS/i }).click();
   await expect(page.locator('#chapterSelectPanel')).toBeVisible();
   await expect(page.locator('#chapterSelectPanel .chapter-grid button')).toHaveCount(4);
+  await page.locator('#chapterSelectPanel [data-close-panel]').click();
+  await expect(page.locator('#referencePanels')).not.toHaveClass(/open/);
   await page.getByRole('button', { name: /HOW TO PLAY/i }).click();
   await expect(page.locator('#howToPanel')).toContainText('Tap to move');
   await expect(page.locator('#howToPanel')).toContainText('Auto-interact');
