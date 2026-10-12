@@ -106,13 +106,15 @@ jobs:
           arch: x86_64
           profile: pixel_2
           script: |
-            set -euo pipefail
+            set -eu
             adb install -r signed-artifact/THE-TREASURE.apk
             adb shell monkey -p com.thetreasure.game 1
             sleep 8
             adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | grep 'com.thetreasure.game'
-            if adb logcat -d -t 3000 | grep -E 'FATAL EXCEPTION|Fatal signal' | grep -q 'com.thetreasure.game'; then
+            CRASH_LOG="$(adb logcat -d -t 3000 | grep -E 'FATAL EXCEPTION|Fatal signal' || true)"
+            if printf '%s\n' "$CRASH_LOG" | grep -q 'com.thetreasure.game'; then
               echo "::error::App crash signature detected after launch."
+              printf '%s\n' "$CRASH_LOG"
               exit 1
             fi
             adb shell pm path com.thetreasure.game
