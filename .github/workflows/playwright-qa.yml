@@ -1,4 +1,4 @@
-name: Playwright Game QA
+name: RELIC - Playwright Game QA
 
 on:
   push:
