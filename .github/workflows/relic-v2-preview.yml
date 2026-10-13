@@ -1,0 +1,33 @@
+name: RELIC V2 - Browser Preview Bundle
+
+on:
+  push:
+    branches: ["qa/relic-v2-preview"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package standalone HTML preview
+        run: |
+          mkdir -p preview-bundle
+          cp app/src/main/assets/relic-v2.html app/src/main/assets/relic-v2-engine.js preview-bundle/
+          cp app/src/main/assets/index.html preview-bundle/classic-game.html
+          cat > preview-bundle/README.txt <<'EOF'
+          RELIC V2 Browser Preview
+          Extract this folder and open relic-v2.html in a modern browser.
+          Internet access is not required for the game files.
+          This is a prototype preview; it is not a production release.
+          EOF
+          cd preview-bundle && zip -r ../relic-v2-browser-preview.zip .
+      - name: Upload browser preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: relic-v2-browser-preview
+          path: relic-v2-browser-preview.zip
+          retention-days: 14
