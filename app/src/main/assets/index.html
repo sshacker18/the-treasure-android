@@ -248,5 +248,5 @@ window.addEventListener('message',event=>{
    setTimeout(()=>{transition.style.display='none'},1000);
  },3600);
 });
-document.getElementById('closePostCredits').addEventListener('click',()=>{document.getElementById('postCredits').classList.remove('show');launched=true;document.body.classList.remove('intro-screen');intro.style.display='none';loadChapter(0);setImmersiveChrome(true);if(shellMusicOn&&window.TREASURE_AUDIO_TRACKS.length)playShellTrack().catch(()=>{})});
+document.getElementById('closePostCredits').addEventListener('click',()=>{document.getElementById('postCredits').classList.remove('show');if(shellMusicOn)setShellMusic(false).catch(()=>{});launched=false;current=0;document.body.classList.remove('playing');document.body.classList.add('intro-screen');intro.style.display='flex';document.getElementById('chapterDrawer').classList.remove('open');const transition=document.getElementById('transition');transition.classList.remove('show');transition.style.display='none';frame.srcdoc='';loading.style.display='none';select.value='0';label.textContent=CHAPTERS[0].label+' · '+CHAPTERS[0].subtitle;setImmersiveChrome(false)});
 </script></body></html>
