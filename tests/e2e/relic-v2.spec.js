@@ -71,13 +71,17 @@ test.describe('RELIC V2 linear campaign', () => {
     expect(dimensions.height).toBeGreaterThan(0);
     expect(dimensions.cssWidth).toBeGreaterThan(0);
     expect(dimensions.cssHeight).toBeGreaterThan(0);
-    await expect(page.getByRole('button', { name: 'Move left' })).toBeAttached();
-    await expect(page.getByRole('button', { name: 'Move right' })).toBeAttached();
+    await expect(page.getByRole('application', { name: 'Movement joystick' })).toBeAttached();
+    await expect(page.getByRole('button', { name: 'Triangle: attack' })).toBeAttached();
+    await expect(page.getByRole('button', { name: 'Square: interact' })).toBeAttached();
+    await expect(page.getByRole('button', { name: 'Circle: dodge' })).toBeAttached();
+    await expect(page.getByRole('button', { name: 'Cross: jump' })).toBeAttached();
   });
 });
 
 test.describe('RELIC V2 virtual controller', () => {
   test('action buttons expose the intended action feedback', async ({ page }) => {
+    await page.setViewportSize({ width: 700, height: 390 });
     await page.goto(gameUrl);
     await page.getByRole('button', { name: 'Triangle: attack' }).dispatchEvent('pointerdown', { pointerId: 1, clientX: 10, clientY: 10, pointerType: 'touch', isPrimary: true });
     await expect(page.locator('#controlFeedback')).toContainText('ATTACK');
@@ -90,6 +94,7 @@ test.describe('RELIC V2 virtual controller', () => {
   });
 
   test('virtual stick accepts pointer interaction and resets after release', async ({ page }) => {
+    await page.setViewportSize({ width: 700, height: 390 });
     await page.goto(gameUrl);
     const stick = page.getByRole('application', { name: 'Movement joystick' });
     await stick.dispatchEvent('pointerdown', { pointerId: 1, clientX: 60, clientY: 60, pointerType: 'touch', isPrimary: true });
