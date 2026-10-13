@@ -90,6 +90,9 @@ const objectiveByChapter = {
 };
 
 async function enterChapter(page, chapterNumber) {
+  // Keep gameplay coordinates in a predictable landscape viewport, including the
+  // Pixel-sized Chromium project. The real Android build is also landscape-first.
+  await page.setViewportSize({ width: 844, height: 390 });
   await startAdventure(page);
   if (chapterNumber > 1) await loadChapterForTest(page, chapterNumber);
   const game = page.frameLocator('#gameFrame');
@@ -105,7 +108,7 @@ for (const chapter of [1, 2, 3, 4]) {
     test.setTimeout(35000);
     const game = await enterChapter(page, chapter);
     const objective = objectiveByChapter[chapter];
-    const canvas = game.locator('canvas#c');
+    const canvas = game.locator('canvas').first();
     await expect(canvas).toBeVisible();
 
     // Use the same tap-to-move input available to the player. Do not set
@@ -119,20 +122,24 @@ for (const chapter of [1, 2, 3, 4]) {
 test('Chapter 3 checkpoint activates once and does not repeatedly lock movement', async ({ page }) => {
   test.setTimeout(40000);
   const game = await enterChapter(page, 3);
-  const canvas = game.locator('canvas#c');
+  const canvas = game.locator('canvas').first();
 
-  // Activate the first checkpoint through tap-to-move and automatic interaction.
-  await canvas.click({ position: { x: 720, y: 520 } });
+  // Chapter 3 starts at world (90,100). Approach the checkpoint using two
+  // visible tap destinations; the camera follows the player, so the second
+  // tap targets the checkpoint after it has scrolled into view.
+  await canvas.click({ position: { x: 720, y: 350 } });
+  await page.waitForTimeout(4500);
+  await canvas.click({ position: { x: 720, y: 365 } });
   await expect(game.locator('#cinema')).toHaveClass(/show/, { timeout: 10000 });
   await expect(game.locator('#ctitle')).toHaveText('SAFE GROUND');
   await expect(game.locator('#cinema')).not.toHaveClass(/show/, { timeout: 5000 });
 
   // Leave and return. A checkpoint that has already been activated must not
   // reopen the same dialogue or leave the game stuck in its story-pause state.
-  await canvas.click({ position: { x: 500, y: 400 } });
-  await page.waitForTimeout(1800);
-  await canvas.click({ position: { x: 720, y: 520 } });
-  await page.waitForTimeout(1800);
+  await canvas.click({ position: { x: 500, y: 220 } });
+  await page.waitForTimeout(2200);
+  await canvas.click({ position: { x: 720, y: 365 } });
+  await page.waitForTimeout(2200);
   await expect(game.locator('#cinema')).not.toHaveClass(/show/);
   await expect(game.locator('#virtualJoystick')).toBeVisible();
   await expect(game.locator('#hud')).toContainText('FRAGMENTS');
