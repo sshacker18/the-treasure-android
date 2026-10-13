@@ -1,4 +1,4 @@
-# RELIC — 3D Prototype — 3D Prototype
+# RELIC — 3D Prototype
 
 This is an **isolated Godot 4.x prototype**, kept separate from the existing Android WebView app and its application ID.
 
