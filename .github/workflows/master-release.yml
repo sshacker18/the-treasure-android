@@ -1,4 +1,4 @@
-name: THE TREASURE - Master Release Pipeline
+name: RELIC - Master Release Pipeline
 
 on:
   workflow_dispatch:
