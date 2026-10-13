@@ -64,6 +64,7 @@ test.describe('RELIC V2 linear campaign', () => {
   });
 
   test('canvas renders and touch controls are available in responsive layout', async ({ page }) => {
+    await page.setViewportSize({ width: 700, height: 390 });
     const canvas = page.locator('#stageCanvas');
     await expect(canvas).toBeVisible();
     const dimensions = await canvas.evaluate(el => ({ width: el.width, height: el.height, cssWidth: el.clientWidth, cssHeight: el.clientHeight }));
