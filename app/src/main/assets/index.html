@@ -72,7 +72,7 @@ body.playing #immersiveMenu{display:none!important}
   <button id="begin">START THE ADVENTURE</button>
  </div></div>
  <div id="transition" aria-live="polite"><div><div class="eyebrow">THE TREASURE · NEXT CHAPTER</div><h2 id="transitionTitle">THE JOURNEY CONTINUES</h2><p id="transitionText">The story moves forward…</p></div></div>
-<div id="postCredits" aria-live="polite" role="dialog" aria-modal="true" aria-label="Post-credits"><div class="credits-card"><div class="eyebrow">THE END IS ONLY THE BEGINNING</div><h2>THE TREASURE</h2><div class="credits-tag">POST-CREDITS</div><div class="credit-label">Game Director</div><div class="credit-name">Sahith</div><div class="credit-label">Developed By</div><div class="credit-name">Sahith &amp; ChatGPT</div><p>Thank you for joining the adventure.</p><button id="closePostCredits">RETURN TO GAME</button></div></div>
+<div id="postCredits" aria-live="polite" role="dialog" aria-modal="true" aria-label="Post-credits"><div class="credits-card"><div class="eyebrow">THE END IS ONLY THE BEGINNING</div><h2>THE TREASURE</h2><div class="credits-tag">POST-CREDITS</div><div class="credit-label">Game Director</div><div class="credit-name">Sahith</div><div class="credit-label">Developed By</div><div class="credit-name">Sahith &amp; ChatGPT</div><p>Thank you for joining the adventure.</p><button id="closePostCredits">PLAY AGAIN · CHAPTER 1</button></div></div>
  <div id="immersiveMenu"><button id="openChapterMenu" aria-label="Open pause and chapter menu">☰ MENU</button></div>
  <div id="chapterDrawer" role="dialog" aria-modal="true" aria-label="Game menu">
   <div class="drawer-card">
@@ -113,7 +113,12 @@ window.TREASURE_AUDIO_TRACKS = window.TREASURE_AUDIO_TRACKS || [];
 let current=0, launched=false;
 let chromeHideTimer=null;
 let shellAudioContext=null,shellTrackAudio=null,shellMusicTimer=null,shellMusicOn=false,shellMusicStep=0;
-const shellMelody=[196,246.94,293.66,369.99,329.63,293.66,246.94,220,196,220,261.63,329.63,293.66,261.63,220,174.61];
+const shellMelodies=[
+ [196,246.94,293.66,369.99,329.63,293.66,246.94,220,196,220,261.63,329.63,293.66,261.63,220,174.61],
+ [146.83,196,220,293.66,261.63,220,196,174.61,146.83,174.61,220,261.63,293.66,261.63,220,146.83],
+ [110,146.83,174.61,220,196,174.61,146.83,130.81,110,130.81,164.81,196,220,196,164.81,110],
+ [164.81,220,261.63,329.63,293.66,261.63,220,196,164.81,196,246.94,293.66,329.63,293.66,246.94,164.81]
+];
 function shellTone(frequency,duration,volume,type,delay){
  if(!shellAudioContext||shellAudioContext.state!=='running')return;
  const t=shellAudioContext.currentTime+(delay||0),osc=shellAudioContext.createOscillator(),gain=shellAudioContext.createGain();
@@ -123,11 +128,12 @@ function shellTone(frequency,duration,volume,type,delay){
 }
 function shellMusicTick(){
  if(!shellMusicOn||!shellAudioContext||shellAudioContext.state!=='running')return;
- const step=shellMusicStep,note=shellMelody[step%shellMelody.length];
- shellTone(note,.46,.032,'triangle');
- if(step%2===0)shellTone(note/2,.76,.019,'sine',.015);
- if(step%4===0){shellTone(note*1.5,.30,.010,'sine',.05);shellTone(note*2,.23,.008,'triangle',.08);}
- if(step%8===4)shellTone(shellMelody[(step+5)%shellMelody.length]*.75,.35,.008,'sine',.04);
+ const step=shellMusicStep,melody=shellMelodies[Math.max(0,Math.min(3,current))],note=melody[step%melody.length];
+ // Layered, audible backing motif; each chapter has its own tonal identity.
+ shellTone(note,.54,.068,'triangle');
+ if(step%2===0)shellTone(note/2,.82,.038,'sine',.015);
+ if(step%4===0){shellTone(note*1.5,.34,.022,'sine',.05);shellTone(note*2,.27,.018,'triangle',.08);}
+ if(step%8===4)shellTone(melody[(step+5)%melody.length]*.75,.42,.020,'sine',.04);
  shellMusicStep++;
 }
 async function playShellTrack(){
@@ -198,7 +204,7 @@ function loadChapter(index){
  document.getElementById('prev').disabled=current===0;
  document.getElementById('next').textContent=current===CHAPTERS.length-1?'RESTART FROM CH. 1 ↺':'NEXT CHAPTER →';
 }
-document.getElementById('begin').addEventListener('click',()=>{launched=true;document.body.classList.remove('intro-screen');intro.style.display='none';loadChapter(0);setImmersiveChrome(true)});
+document.getElementById('begin').addEventListener('click',()=>{launched=true;document.body.classList.remove('intro-screen');intro.style.display='none';loadChapter(0);setImmersiveChrome(true);setShellMusic(true).catch(()=>{})});
 document.getElementById('openChapterMenu').addEventListener('click',event=>{
  event.preventDefault();
  document.getElementById('chapterDrawer').classList.add('open');
@@ -242,5 +248,5 @@ window.addEventListener('message',event=>{
    setTimeout(()=>{transition.style.display='none'},1000);
  },3600);
 });
-document.getElementById('closePostCredits').addEventListener('click',()=>document.getElementById('postCredits').classList.remove('show'));
+document.getElementById('closePostCredits').addEventListener('click',()=>{document.getElementById('postCredits').classList.remove('show');launched=true;document.body.classList.remove('intro-screen');intro.style.display='none';loadChapter(0);setImmersiveChrome(true);if(shellMusicOn&&window.TREASURE_AUDIO_TRACKS.length)playShellTrack().catch(()=>{})});
 </script></body></html>
