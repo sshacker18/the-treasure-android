@@ -33,21 +33,31 @@ aside{padding:14px;display:flex;flex-direction:column;gap:12px}
 .character:nth-child(2) .portrait{background:linear-gradient(145deg,#6c8857,#263d2e)}
 .character:nth-child(3) .portrait{background:linear-gradient(145deg,#c07e6a,#51313a)}
 .character span:last-child{font-size:10px;font-weight:750}
+
+.hero-card{display:grid;grid-template-columns:74px minmax(0,1fr);gap:12px;align-items:center;padding:12px;border:1px solid #665033;border-radius:12px;background:linear-gradient(145deg,#2b281b,#171915)}
+.hero-avatar{height:74px;border-radius:12px;display:grid;place-items:center;background:radial-gradient(circle at 50% 30%,#c9dc9a,#4b6946 70%,#26352b);font-size:30px;box-shadow:inset 0 0 0 1px #d5dca166}
+.hero-name{font-size:12px;font-weight:950;letter-spacing:.12em;color:#f5d28e}
+.dialogue-card{padding:12px;border-radius:12px;border:1px solid #4a6040;background:linear-gradient(140deg,#1e2b20,#151b18);min-height:108px}
+.dialogue-speaker{font-size:10px;letter-spacing:.18em;font-weight:900;color:#b6d38a}
+.dialogue-text{font-size:14px;line-height:1.55;color:#fff3dc;margin:8px 0 0}
+.audio-controls{display:flex;gap:8px;flex-wrap:wrap}
+#voiceStatus{font-size:10px;line-height:1.5;color:#b8b29f;min-height:28px}
+#dialogueAudio{display:none}
 label{display:block;font-size:11px;color:#d6c9b5;margin-bottom:5px}
 select{width:100%}
 #stageProgress{font-size:11px;color:#bdb09b}
 footer{border-top:1px solid #403020;padding:9px 14px;display:flex;justify-content:space-between;gap:8px;color:#aa9a81;font-size:10px}
-.mobile-controls{display:none;justify-content:space-between;padding:0 12px 12px;gap:8px}
+.mobile-controls{display:none;justify-content:space-between;align-items:center;padding:0 12px 12px;gap:12px}.virtual-stick{width:104px;height:104px;flex:0 0 104px;border-radius:50%;border:2px solid #b99a68;background:radial-gradient(circle,#3d4939,#18211b);position:relative;touch-action:none;user-select:none}.stick-knob{position:absolute;width:42px;height:42px;left:29px;top:29px;border-radius:50%;background:linear-gradient(145deg,#e7bd72,#8c5b24);border:2px solid #f8e5ad;pointer-events:none}.action-cluster{display:grid;grid-template-columns:repeat(2,48px);grid-template-rows:repeat(2,48px);gap:7px}.action-button{width:48px;height:48px;min-width:48px;padding:0;border-radius:50%;font-size:22px;font-weight:900;background:radial-gradient(circle at 35% 25%,#50443a,#211b17);border-color:#c5a46e}.action-button[data-action="triangle"]{color:#6dd0a3}.action-button[data-action="square"]{color:#e58fca}.action-button[data-action="circle"]{color:#e98776}.action-button[data-action="cross"]{color:#8db8ff}#controlFeedback{position:absolute;left:12px;bottom:8px;font-size:9px;color:#f5d28e;pointer-events:none}
 .mobile-controls button{min-width:64px;touch-action:none}
 @media(max-width:720px){main{grid-template-columns:1fr;padding:8px;gap:8px}.canvas-wrap{height:45vh;min-height:230px}aside{padding:12px}.mobile-controls{display:flex}.subtitle{display:none}footer{font-size:9px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 </style>
 </head>
 <body>
-<header><div><div class="brand">RELIC <span style="color:#fff0d0">V2</span></div><div class="subtitle">A cinematic linear adventure</div></div><div style="display:flex;align-items:center;gap:8px"><div class="kicker">4 CHAPTERS · 16 STAGES</div><a href="index.html" style="font-size:10px;color:#d7c5aa;text-decoration:underline">Classic game</a></div></header>
+<header><div><div class="brand">RELIC <span style="color:#fff0d0">V2</span></div><div class="subtitle">Tiny heroes. Big adventures. Stories you can hear.</div></div><div style="display:flex;align-items:center;gap:8px"><div class="kicker">4 CHAPTERS · 16 STAGES</div><a href="index.html" style="font-size:10px;color:#d7c5aa;text-decoration:underline">Classic game</a></div></header>
 <main>
 <section class="panel" aria-label="Playable scene">
-  <div class="canvas-wrap"><canvas id="stageCanvas" width="960" height="520" aria-label="RELIC V2 playable 2D scene"></canvas>
+  <div class="canvas-wrap"><canvas id="stageCanvas" width="960" height="520" aria-label="RELIC V2 tiny adventurer prototype scene"></canvas>
   <div class="mobile-controls" aria-label="On-screen game controller">
     <div id="virtualStick" class="virtual-stick" role="application" aria-label="Movement joystick"><div id="stickKnob" class="stick-knob"></div></div>
     <div class="action-cluster" aria-label="Action buttons">
@@ -64,46 +74,123 @@ footer{border-top:1px solid #403020;padding:9px 14px;display:flex;justify-conten
   <div class="hud controls"><button id="prevStage" aria-label="Previous stage" disabled>← Previous</button><button class="primary" id="nextStage" aria-label="Next stage">Next Stage →</button></div>
 </section>
 <aside class="panel">
-  <div><div class="section-title">YOUR ADVENTURE TEAM</div><p>Choose a character for the campaign. Each has a distinct role in the story.</p></div>
-  <div class="character-grid" role="group" aria-label="Choose character">
-    <button class="character" data-character="explorer" aria-pressed="true"><span class="portrait">E</span><span>Explorer</span></button>
-    <button class="character" data-character="sameer" aria-pressed="false"><span class="portrait">S</span><span>Sameer</span></button>
-    <button class="character" data-character="mina" aria-pressed="false"><span class="portrait">M</span><span>Mina</span></button>
+  <div><div class="section-title">MEET YOUR ADVENTURE HERO</div><p>One tiny explorer. A huge world of secrets. This is our first original character-style test—not the final 3D model.</p></div>
+  <div class="hero-card" aria-label="Trailblazer character profile">
+    <div class="hero-avatar" aria-hidden="true">✦</div>
+    <div><div class="hero-name">THE TRAILBLAZER</div><p>A curious little adventurer with a bright scarf, big boots, a well-worn backpack, and a habit of finding hidden paths.</p></div>
   </div>
-  <p id="characterBio" aria-live="polite">A resourceful field explorer who follows clues, solves ancient mechanisms, and leads the expedition.</p>
+  <div><div class="section-title">STORY DIALOGUE</div>
+    <div class="dialogue-card" role="group" aria-label="Character dialogue">
+      <div id="dialogueSpeaker" class="dialogue-speaker">THE TRAILBLAZER</div>
+      <p id="dialogueText" class="dialogue-text">All right, explorer. The jungle trail starts here. Keep your eyes open—every little detail could lead us to the relic.</p>
+    </div>
+  </div>
+  <div class="audio-controls">
+    <button class="primary" id="playDialogue" aria-label="Play voice line">▶ Play voice line</button>
+    <button id="nextDialogue" aria-label="Next dialogue line">Next line →</button>
+  </div>
+  <audio id="dialogueAudio" preload="none"></audio>
+  <div id="voiceStatus" role="status" aria-live="polite">The browser preview ZIP includes generated WAV dialogue for offline playback.</div>
   <div><label for="stageSelect">Stage select (unlocked preview)</label><select id="stageSelect" aria-label="Select stage"></select></div>
   <div><div class="section-title">LINEAR PROGRESSION</div><p>Each stage raises the challenge. Hazards become faster, enemies tougher, and safe windows shorter. Chapter finales test the skills learned in the preceding stages.</p></div>
   <div class="controls"><button id="resetStage">Restart stage</button></div>
 </aside>
 </main>
-<footer><span>RELIC V2 · Canvas 2D · Android WebView friendly</span><span>Autosave-ready · Touch controls</span></footer>
+<footer><span>RELIC V2 · Tiny adventure hero · Voice preview</span><span>Prototype only · Touch controls</span></footer>
 <script src="relic-v2-engine.js"></script>
 <script>
 (function(){
-  const characters={
-    explorer:"A resourceful field explorer who follows clues, solves ancient mechanisms, and leads the expedition.",
-    sameer:"Sameer is a skilled jungle guide with deep knowledge of trails, wildlife, and the lost paths between ruins.",
-    mina:"Mina is a city-born researcher and adventurer: sharp, brave, and essential to decoding the relic's history."
-  };
-  const select=document.querySelector("#stageSelect");
-  RelicV2.getStages().forEach(stage=>{
-    const option=document.createElement("option");
-    option.value=stage.id;
-    option.textContent=String(stage.id).padStart(2,"0")+" · "+stage.title+" — "+stage.difficultyLabel;
-    select.appendChild(option);
+  const game = window.RelicV2.createGame({canvas: document.querySelector("#stageCanvas")});
+  const stageSelect = document.querySelector("#stageSelect");
+  window.RelicV2.getStages().forEach(stage => {
+    const option = document.createElement("option");
+    option.value = String(stage.id);
+    option.textContent = "Stage " + stage.id + " · " + stage.title;
+    stageSelect.appendChild(option);
   });
-  const game=RelicV2.createGame();
-  function sync(id){const stage=game.setStage(id);select.value=String(stage.id);document.querySelector("#prevStage").disabled=stage.id===1;document.querySelector("#nextStage").disabled=stage.id===16;}
-  select.addEventListener("change",()=>sync(select.value));
-  document.querySelector("#prevStage").addEventListener("click",()=>sync(game.state.stageId-1));
-  document.querySelector("#nextStage").addEventListener("click",()=>sync(game.state.stageId+1));
-  document.querySelector("#resetStage").addEventListener("click",()=>sync(game.state.stageId));
-  document.querySelectorAll("[data-character]").forEach(button=>button.addEventListener("click",()=>{
-    document.querySelectorAll("[data-character]").forEach(b=>b.setAttribute("aria-pressed",String(b===button)));
-    document.querySelector("#characterBio").textContent=characters[button.dataset.character];
-    document.body.dataset.character=button.dataset.character;
-  }));
-  window.addEventListener("pagehide",()=>game.destroy(),{once:true});
+  function syncStage(stage) {
+    stageSelect.value = String(stage.id);
+    document.querySelector("#prevStage").disabled = stage.id === 1;
+    document.querySelector("#nextStage").disabled = stage.id === 16;
+  }
+  document.querySelector("#prevStage").addEventListener("click", () => syncStage(game.setStage(game.state.stageId - 1)));
+  document.querySelector("#nextStage").addEventListener("click", () => syncStage(game.setStage(game.state.stageId + 1)));
+  document.querySelector("#resetStage").addEventListener("click", () => syncStage(game.setStage(game.state.stageId)));
+  stageSelect.addEventListener("change", () => syncStage(game.setStage(stageSelect.value)));
+
+  const stick = document.querySelector("#virtualStick");
+  const knob = document.querySelector("#stickKnob");
+  let stickPointer = null;
+  function updateStick(event) {
+    const rect = stick.getBoundingClientRect();
+    const radius = Math.min(rect.width, rect.height) * 0.32;
+    const dx = event.clientX - (rect.left + rect.width / 2);
+    const dy = event.clientY - (rect.top + rect.height / 2);
+    const length = Math.hypot(dx, dy) || 1;
+    const nx = dx / length * Math.min(length, radius);
+    const ny = dy / length * Math.min(length, radius);
+    knob.style.transform = "translate(" + nx + "px," + ny + "px)";
+    game.state.held.delete("left"); game.state.held.delete("right");
+    if (nx < -8) game.state.held.add("left");
+    if (nx > 8) game.state.held.add("right");
+  }
+  function resetStick() {
+    stickPointer = null; game.state.held.delete("left"); game.state.held.delete("right");
+    knob.style.transform = "translate(0,0)";
+  }
+  stick.addEventListener("pointerdown", event => { stickPointer = event.pointerId; if (stick.setPointerCapture) { try { stick.setPointerCapture(event.pointerId); } catch (_) {} } updateStick(event); });
+  stick.addEventListener("pointermove", event => { if (stickPointer === event.pointerId) updateStick(event); });
+  ["pointerup","pointercancel","lostpointercapture"].forEach(type => stick.addEventListener(type, resetStick));
+
+  document.querySelectorAll("[data-action]").forEach(button => {
+    const activate = event => { event.preventDefault(); game.performAction(button.dataset.action); document.querySelector("#controlFeedback").textContent = game.state.action.toUpperCase() + " · READY"; };
+    button.addEventListener("pointerdown", activate);
+    button.addEventListener("click", event => { if (event.detail === 0) activate(event); });
+  });
+
+  const dialogueLines = [
+    { id: "adventure_intro", speaker: "THE TRAILBLAZER", text: "All right, explorer. The jungle trail starts here. Keep your eyes open—every little detail could lead us to the relic.", audio: "audio/adventure_intro.wav" },
+    { id: "adventure_clue", speaker: "THE TRAILBLAZER", text: "Hold on! That symbol is glowing. I think it is showing us where to go next!", audio: "audio/adventure_clue.wav" },
+    { id: "adventure_gate", speaker: "THE NARRATOR", text: "Beyond the ancient gate, a world of lost secrets waits to be discovered.", audio: "audio/adventure_gate.wav" }
+  ];
+  let dialogueIndex = 0;
+  const audio = document.querySelector("#dialogueAudio");
+  const speaker = document.querySelector("#dialogueSpeaker");
+  const text = document.querySelector("#dialogueText");
+  const status = document.querySelector("#voiceStatus");
+  function renderDialogue() {
+    const line = dialogueLines[dialogueIndex];
+    speaker.textContent = line.speaker;
+    text.textContent = line.text;
+    audio.pause(); audio.removeAttribute("src"); audio.load(); game.setTalking(false);
+  }
+  async function playDialogue() {
+    const line = dialogueLines[dialogueIndex];
+    audio.pause(); audio.currentTime = 0; audio.src = line.audio;
+    try {
+      await audio.play();
+      game.setTalking(true);
+      status.textContent = "Playing generated WAV · " + line.id + ".wav";
+    } catch (error) {
+      if ("speechSynthesis" in window && "SpeechSynthesisUtterance" in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(line.text);
+        utterance.rate = 0.92; utterance.pitch = 1.08;
+        utterance.onstart = () => game.setTalking(true);
+        utterance.onend = () => game.setTalking(false);
+        window.speechSynthesis.speak(utterance);
+        status.textContent = "Using device speech fallback. The downloadable browser ZIP includes the generated WAV voices.";
+      } else {
+        game.setTalking(false);
+        status.textContent = "Voice file unavailable in this copy. Use the RELIC V2 browser-preview ZIP for generated WAV audio.";
+      }
+    }
+  }
+  document.querySelector("#playDialogue").addEventListener("click", playDialogue);
+  document.querySelector("#nextDialogue").addEventListener("click", () => { dialogueIndex = (dialogueIndex + 1) % dialogueLines.length; renderDialogue(); });
+  audio.addEventListener("ended", () => game.setTalking(false));
+  window.addEventListener("pagehide", () => { game.destroy(); if ("speechSynthesis" in window) window.speechSynthesis.cancel(); }, { once: true });
+  window.relicV2Dialogue = { getLines: () => dialogueLines.map(line => ({ ...line })), getIndex: () => dialogueIndex, play: playDialogue };
   window.relicV2Game=game;
 })();
 </script>

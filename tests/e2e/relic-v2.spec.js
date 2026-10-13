@@ -45,15 +45,22 @@ test.describe('RELIC V2 linear campaign', () => {
     await expect(page.locator('#stageObjective')).toContainText('guardian');
   });
 
-  test('character selection updates active state and accessible character description', async ({ page }) => {
-    const sameer = page.getByRole('button', { name: /Sameer/ });
-    await sameer.click();
-    await expect(sameer).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#characterBio')).toContainText('jungle guide');
-    const mina = page.getByRole('button', { name: /Mina/ });
-    await mina.click();
-    await expect(mina).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#characterBio')).toContainText('city-born');
+  test('renders one consistent tiny adventurer rather than multiple selectable bot types', async ({ page }) => {
+    await expect(page.getByRole('group', { name: 'Character dialogue' })).toBeVisible();
+    await expect(page.locator('.hero-name')).toHaveText('THE TRAILBLAZER');
+    await expect(page.locator('[data-character]')).toHaveCount(0);
+    await expect(page.locator('#dialogueText')).toContainText('jungle trail');
+  });
+
+  test('dialogue lines advance with matching text and have voice playback controls', async ({ page }) => {
+    const lines = await page.evaluate(() => window.relicV2Dialogue.getLines());
+    expect(lines).toHaveLength(3);
+    expect(lines.map(line => line.id)).toEqual(['adventure_intro', 'adventure_clue', 'adventure_gate']);
+    expect(lines.every(line => line.text.length > 20 && line.audio.endsWith('.wav'))).toBeTruthy();
+    await expect(page.getByRole('button', { name: 'Play voice line' })).toBeVisible();
+    await page.getByRole('button', { name: 'Next dialogue line' }).click();
+    await expect(page.locator('#dialogueText')).toContainText('symbol is glowing');
+    await expect(page.locator('#dialogueSpeaker')).toHaveText('THE TRAILBLAZER');
   });
 
   test('canvas renders and touch controls are available in responsive layout', async ({ page }) => {
@@ -64,13 +71,17 @@ test.describe('RELIC V2 linear campaign', () => {
     expect(dimensions.height).toBeGreaterThan(0);
     expect(dimensions.cssWidth).toBeGreaterThan(0);
     expect(dimensions.cssHeight).toBeGreaterThan(0);
-    await expect(page.getByRole('button', { name: 'Move left' })).toBeAttached();
-    await expect(page.getByRole('button', { name: 'Move right' })).toBeAttached();
+    await expect(page.getByRole('application', { name: 'Movement joystick' })).toBeAttached();
+    await expect(page.getByRole('button', { name: 'Triangle: attack' })).toBeAttached();
+    await expect(page.getByRole('button', { name: 'Square: interact' })).toBeAttached();
+    await expect(page.getByRole('button', { name: 'Circle: dodge' })).toBeAttached();
+    await expect(page.getByRole('button', { name: 'Cross: jump' })).toBeAttached();
   });
 });
 
 test.describe('RELIC V2 virtual controller', () => {
   test('action buttons expose the intended action feedback', async ({ page }) => {
+    await page.setViewportSize({ width: 700, height: 390 });
     await page.goto(gameUrl);
     await page.getByRole('button', { name: 'Triangle: attack' }).dispatchEvent('pointerdown', { pointerId: 1, clientX: 10, clientY: 10, pointerType: 'touch', isPrimary: true });
     await expect(page.locator('#controlFeedback')).toContainText('ATTACK');
@@ -83,6 +94,7 @@ test.describe('RELIC V2 virtual controller', () => {
   });
 
   test('virtual stick accepts pointer interaction and resets after release', async ({ page }) => {
+    await page.setViewportSize({ width: 700, height: 390 });
     await page.goto(gameUrl);
     const stick = page.getByRole('application', { name: 'Movement joystick' });
     await stick.dispatchEvent('pointerdown', { pointerId: 1, clientX: 60, clientY: 60, pointerType: 'touch', isPrimary: true });
