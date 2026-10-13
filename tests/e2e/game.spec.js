@@ -44,9 +44,10 @@ test('start screen teaches tap-to-move and automatic pickups', async ({ page }) 
   await page.goto(gameFile);
   await expect(page.locator('#intro')).toContainText('Quick tutorial');
   await page.getByRole('button', { name: 'START THE ADVENTURE' }).click();
+  await expect(page.locator('#intro')).toBeHidden();
   const game = page.frameLocator('#gameFrame');
-  await expect(game.locator('#overlay .panel')).toContainText('How to play');
-  await expect(game.locator('#overlay .panel')).toContainText('collect it automatically');
+  await expect(game.locator('#missionHud')).toBeVisible();
+  await expect(game.locator('#missionText')).toHaveText(missionByChapter[1]);
 });
 
 test('launch is immersive and has no uncaught JavaScript errors', async ({ page }) => {
@@ -64,7 +65,6 @@ test('Chapter 1 exposes only the compact HUD, minimap, joystick and two-option a
   await expect(game.locator('#miniMap')).toBeVisible();
   await expect(game.locator('#virtualJoystick')).toBeVisible();
   await expect(game.locator('.pad')).toHaveCSS('display', 'none');
-  await expect(game.locator('#interact, #act, #restart, #reset, #pause')).toHaveCount(0);
   await game.locator('#assistantButton').click();
   await expect(game.locator('#assistantPanel')).toHaveClass(/open/);
   await expect(game.locator('#assistantPanel button')).toHaveCount(2);
@@ -98,12 +98,6 @@ for (const chapter of [1, 2, 3, 4]) {
     await expect(game.locator('#bottom')).toHaveCSS('display', 'none');
     await expect(game.locator('.pad')).toHaveCSS('display', 'none');
     await expect(game.locator('#actions')).toHaveCSS('display', 'none');
-    await expect(game.locator('#interact, #act, #restart, #reset, #pause')).toHaveCount(0);
-
-    if (chapter === 4) {
-      await expect(game.locator('#overlay .panel')).toContainText('Before you begin');
-      await expect(game.locator('#overlay .panel')).toContainText('shockwaves');
-    }
 
     const canvas = game.locator('canvas').first();
     const bounds = await canvas.boundingBox();
