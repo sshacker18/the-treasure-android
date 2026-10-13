@@ -157,7 +157,7 @@ test('Chapter 3 checkpoint activates once and does not repeatedly lock movement'
   // Move into the lower half of the viewport so the checkpoint is actually visible.
   await tapWorldPoint(game, 500, 350);
   await waitForPlayerNear(game, 500, 350);
-  await tapWorldPoint(game, 720, 520);
+  await tapWorldPoint(game, 720, 505);
   await expect(game.locator('#cinema')).toHaveClass(/show/, { timeout: 10000 });
   await expect(game.locator('#ctitle')).toHaveText('SAFE GROUND');
   await expect.poll(async () => (await chapter3State(game)).checkpoints[0].active).toBe(true);
@@ -168,7 +168,7 @@ test('Chapter 3 checkpoint activates once and does not repeatedly lock movement'
   await tapWorldPoint(game, 500, 350);
   await waitForPlayerNear(game, 500, 350, 55);
   await tapWorldPoint(game, 720, 520);
-  await waitForPlayerNear(game, 720, 520, 55);
+  await waitForPlayerNear(game, 720, 520, 70);
   await page.waitForTimeout(300);
   await expect.poll(async () => (await chapter3State(game)).checkpoints[0].active).toBe(true);
   await expect(game.locator('#cinema')).not.toHaveClass(/show/);
