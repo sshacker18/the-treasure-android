@@ -88,6 +88,17 @@
       return getStage(state.stageId);
     }
 
+    function performAction(action) {
+      const actions = { triangle: "attack", square: "interact", circle: "dodge", cross: "jump" };
+      const resolved = actions[action] || action;
+      state.action = resolved;
+      state.actionUntil = state.frame + 550;
+      if (resolved === "jump" && state.jumpY <= 0) state.jumpV = 260;
+      if (resolved === "dodge") state.dodgeUntil = state.frame + 420;
+      draw();
+      return resolved;
+    }
+
     function drawCharacter(x, floor, scale, time, characterState) {
       ctx.save(); ctx.translate(x, floor); ctx.scale(scale, scale);
       const talking = !!(characterState && characterState.talking);
@@ -205,8 +216,15 @@
     function tick(time) {
       if (!state.running) return;
       state.frame = time || state.frame + 16;
+      const delta = state.lastTickTime ? Math.min(32, Math.max(0, time - state.lastTickTime)) : 16;
+      state.lastTickTime = time || state.lastTickTime + delta;
       const movement = (state.held.has("right") ? 1 : 0) - (state.held.has("left") ? 1 : 0);
-      state.x = Math.max(0.06, Math.min(0.88, state.x + movement * 0.0017 * (reducedMotion ? 1 : 1.25)));
+      state.x = Math.max(0.06, Math.min(0.88, state.x + movement * delta * 0.00012 * (reducedMotion ? 1 : 1.25)));
+      if (state.jumpV || state.jumpY > 0) {
+        state.jumpY = Math.max(0, state.jumpY + state.jumpV * delta / 1000);
+        state.jumpV -= 680 * delta / 1000;
+        if (state.jumpY === 0) state.jumpV = 0;
+      }
       draw();
       state.raf = root.requestAnimationFrame(tick);
     }
@@ -237,13 +255,14 @@
       state,
       getStage,
       setStage,
+      performAction,
       setTalking(value) { state.talking = Boolean(value); draw(); },
       getStages: () => STAGES.map(s => Object.assign({}, s)),
       destroy() { state.running = false; if (state.raf) root.cancelAnimationFrame(state.raf); root.removeEventListener("keydown", keyDown); root.removeEventListener("keyup", keyUp); }
     };
   }
 
-  const api = { CHAPTERS, STAGES, getStage, createGame };
+  const api = { CHAPTERS, STAGES, getStage, getStages: () => STAGES.map(s => Object.assign({}, s)), createGame };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.RelicV2 = api;
 })(typeof window !== "undefined" ? window : globalThis);
