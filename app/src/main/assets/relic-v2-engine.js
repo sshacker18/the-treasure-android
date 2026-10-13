@@ -54,7 +54,7 @@
     if (!canvas) throw new Error("RELIC V2 requires a canvas element with id stageCanvas");
     const ctx = canvas.getContext("2d");
     const reducedMotion = root.matchMedia && root.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const state = { stageId: 1, x: 0.18, y: 0, velocity: 0, running: true, frame: 0, lastTime: 0, held: new Set(), completed: false };
+    const state = { stageId: 1, x: 0.18, y: 0, jumpY: 0, jumpV: 0, velocity: 0, running: true, frame: 0, lastTime: 0, held: new Set(), completed: false };
     const width = () => Math.max(320, canvas.clientWidth || canvas.width || 800);
     const height = () => Math.max(180, canvas.clientHeight || canvas.height || 450);
 
@@ -160,7 +160,7 @@
       const key = e.key.toLowerCase();
       if (["arrowleft", "a"].includes(key)) state.held.add("left");
       if (["arrowright", "d"].includes(key)) state.held.add("right");
-      if ([" ", "arrowup", "w"].includes(key)) { state.y = 1; if (e.preventDefault) e.preventDefault(); }
+      if ([" ", "arrowup", "w"].includes(key)) { if (state.jumpY <= 0) state.jumpV = 260; if (e.preventDefault) e.preventDefault(); }
     }
     function keyUp(e) {
       const key = e.key.toLowerCase();
