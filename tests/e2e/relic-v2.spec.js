@@ -68,3 +68,29 @@ test.describe('RELIC V2 linear campaign', () => {
     await expect(page.getByRole('button', { name: 'Move right' })).toBeAttached();
   });
 });
+
+test.describe('RELIC V2 virtual controller', () => {
+  test('action buttons expose the intended action feedback', async ({ page }) => {
+    await page.goto(gameUrl);
+    await page.getByRole('button', { name: 'Triangle: attack' }).dispatchEvent('pointerdown', { pointerId: 1, clientX: 10, clientY: 10, pointerType: 'touch', isPrimary: true });
+    await expect(page.locator('#controlFeedback')).toContainText('ATTACK');
+    await page.getByRole('button', { name: 'Square: interact' }).dispatchEvent('pointerdown', { pointerId: 2, clientX: 10, clientY: 10, pointerType: 'touch', isPrimary: true });
+    await expect(page.locator('#controlFeedback')).toContainText('INTERACT');
+    await page.getByRole('button', { name: 'Circle: dodge' }).dispatchEvent('pointerdown', { pointerId: 3, clientX: 10, clientY: 10, pointerType: 'touch', isPrimary: true });
+    await expect(page.locator('#controlFeedback')).toContainText('DODGE');
+    await page.getByRole('button', { name: 'Cross: jump' }).dispatchEvent('pointerdown', { pointerId: 4, clientX: 10, clientY: 10, pointerType: 'touch', isPrimary: true });
+    await expect(page.locator('#controlFeedback')).toContainText('JUMP');
+  });
+
+  test('virtual stick accepts pointer interaction and resets after release', async ({ page }) => {
+    await page.goto(gameUrl);
+    const stick = page.getByRole('application', { name: 'Movement joystick' });
+    await stick.dispatchEvent('pointerdown', { pointerId: 1, clientX: 60, clientY: 60, pointerType: 'touch', isPrimary: true });
+    await stick.dispatchEvent('pointermove', { pointerId: 1, clientX: 100, clientY: 60, pointerType: 'touch', isPrimary: true });
+    const heldRight = await page.evaluate(() => window.relicV2Game.state.held.has('right'));
+    expect(heldRight).toBeTruthy();
+    await stick.dispatchEvent('pointerup', { pointerId: 1, clientX: 100, clientY: 60, pointerType: 'touch', isPrimary: true });
+    const released = await page.evaluate(() => !window.relicV2Game.state.held.has('right'));
+    expect(released).toBeTruthy();
+  });
+});
