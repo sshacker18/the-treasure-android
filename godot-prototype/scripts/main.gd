@@ -24,7 +24,7 @@ func _ready() -> void:
 	_build_hero()
 	_build_camera()
 	_build_hud()
-	_show_line("RELIC HERO", "The trail starts here. Let's find the treasure!")
+	_show_line("RELIC", "The trail starts here. Let's find the treasure!")
 	_update_status("Explore the jungle and find the glowing treasure.")
 
 func _process(delta: float) -> void:
@@ -307,17 +307,17 @@ func _run_action(action: String) -> void:
 		"jump":
 			if hero.is_on_floor():
 				hero.velocity.y = JUMP_SPEED
-			_show_line("RELIC HERO", "Whoa! Made it!")
+			_show_line("RELIC", "Whoa! Made it!")
 		"attack":
 			if is_instance_valid(_parts.get("Right Arm")):
 				_parts["Right Arm"].rotation.x = -1.25
-			_show_line("RELIC HERO", "Take that!")
+			_show_line("RELIC", "Take that!")
 		"interact":
 			_check_treasure(true)
 		"dodge":
 			hero.velocity.x *= 1.7
 			hero.velocity.z *= 1.7
-			_show_line("RELIC HERO", "Quick dodge!")
+			_show_line("RELIC", "Quick dodge!")
 
 func _check_treasure(force_interact: bool = false) -> void:
 	if _collected or not is_instance_valid(hero):
@@ -326,7 +326,7 @@ func _check_treasure(force_interact: bool = false) -> void:
 	if hero.global_position.distance_to(treasure_position) < 1.65 or (force_interact and hero.global_position.distance_to(treasure_position) < 3.2):
 		_collected = true
 		_update_status("Treasure found! Vertical-slice objective complete.")
-		_show_line("RELIC HERO", "We found it! The treasure is ours!")
+		_show_line("RELIC", "We found it! The treasure is ours!")
 		hint_label.text = "TREASURE FOUND · prototype objective complete"
 
 func _show_line(speaker: String, line: String) -> void:
