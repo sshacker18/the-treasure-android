@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Non-destructive Android shared-storage inventory and organization planner."""
 from __future__ import annotations
-import csv, hashlib, json, os, time
+import argparse, csv, hashlib, json, os, shutil, time
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -34,7 +34,117 @@ def sha256_file(path: Path) -> str:
             digest.update(chunk)
     return digest.hexdigest()
 
+
+def download_category(path: Path) -> str:
+    ext = path.suffix.lower()
+    if path.name.startswith(".") or ext == ".nomedia": return "KEEP_IN_PLACE"
+    if ext in {".jks", ".keystore", ".pem", ".key", ".p12", ".pfx", ".env"}: return "SENSITIVE_REVIEW"
+    if ext in {".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".bmp"}: return "Photos"
+    if ext in {".mp4", ".mkv", ".mov", ".webm", ".avi", ".3gp"}: return "Videos"
+    if ext in {".pdf", ".doc", ".docx", ".odt", ".rtf", ".txt"}: return "Documents"
+    if ext in {".apk", ".apks", ".xapk", ".aab"}: return "Installers"
+    if ext in {".zip", ".7z", ".rar", ".tar", ".gz"}: return "Archives"
+    if ext in {".mp3", ".m4a", ".wav", ".ogg", ".flac", ".aac", ".opus"}: return "Audio"
+    if ext in {".xls", ".xlsx", ".csv", ".ppt", ".pptx"}: return "Office"
+    if ext in {".html", ".htm", ".css", ".js", ".py", ".java", ".kt", ".json", ".xml"}: return "Development"
+    return "Review"
+
+def organize_downloads():
+    downloads = ROOT / "Download"
+    if not downloads.exists():
+        downloads = ROOT / "Downloads"
+    if not downloads.exists():
+        print(f"Downloads folder not found under {ROOT}.")
+        return 2
+    candidates = []
+    for p in sorted(downloads.iterdir(), key=lambda x: x.name.lower()):
+        if not p.is_file():
+            continue  # existing folders are preserved; only top-level files are planned
+        cat = download_category(p)
+        if cat in {"KEEP_IN_PLACE", "SENSITIVE_REVIEW"}:
+            continue
+        candidates.append((p, cat))
+    print("\\nDOWNLOADS ORGANIZATION PREVIEW")
+    print(f"Folder: {downloads}")
+    print(f"Files eligible to move: {len(candidates)}")
+    print("Existing folders, hidden files, and sensitive key/certificate files will not be moved.")
+    for p, cat in candidates[:60]:
+        print(f"  {p.name}  ->  {cat}/")
+    if len(candidates) > 60:
+        print(f"  ... and {len(candidates)-60} more files (listed in the local manifest after approval)")
+    if not candidates:
+        print("Nothing eligible to move.")
+        return 0
+    print("\\nNo files have been changed yet.")
+    answer = input("To apply these moves, type ORGANIZE. Anything else cancels: ").strip()
+    if answer != "ORGANIZE":
+        print("Cancelled. No files moved.")
+        return 0
+    OUT.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    manifest_path = OUT / f"downloads-moves-{stamp}.json"
+    moves, errors = [], []
+    for src, cat in candidates:
+        dest_dir = downloads / cat
+        try:
+            dest_dir.mkdir(exist_ok=True)
+            dest = dest_dir / src.name
+            if dest.exists():
+                stem, suffix, i = src.stem, src.suffix, 1
+                while dest.exists():
+                    dest = dest_dir / f"{stem} (organized {i}){suffix}"
+                    i += 1
+            shutil.move(str(src), str(dest))
+            moves.append({"from": str(src), "to": str(dest)})
+        except (OSError, shutil.Error) as e:
+            errors.append({"path": str(src), "error": str(e)})
+    manifest = {"created_local_time": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "downloads_folder": str(downloads), "moves": moves, "errors": errors,
+                "deleted": 0, "rollback_instructions": "Run python ~/phone-organizer.py --undo-last-downloads"}
+    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    print(f"\\nDone. Moved {len(moves)} files; errors: {len(errors)}; deleted: 0.")
+    print(f"Rollback manifest: {manifest_path}")
+    print("Nothing was deleted. Existing destination files were never overwritten.")
+    return 0
+
+def undo_last_downloads():
+    manifests = sorted(OUT.glob("downloads-moves-*.json"))
+    if not manifests:
+        print("No Downloads move manifest found. Nothing to undo.")
+        return 0
+    manifest_path = manifests[-1]
+    data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    moves = list(reversed(data.get("moves", [])))
+    print(f"Rollback preview from {manifest_path.name}: {len(moves)} moves")
+    answer = input("To reverse these moves, type UNDO. Anything else cancels: ").strip()
+    if answer != "UNDO":
+        print("Cancelled. No files changed.")
+        return 0
+    restored, skipped = 0, 0
+    for move in moves:
+        src, dest = Path(move["to"]), Path(move["from"])
+        try:
+            if not src.exists() or dest.exists():
+                skipped += 1
+                continue
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(src), str(dest))
+            restored += 1
+        except OSError:
+            skipped += 1
+    print(f"Rollback complete: restored {restored}; skipped {skipped}; deleted 0.")
+    print("Review any skipped files manually.")
+    return 0
+
 def main():
+    parser = argparse.ArgumentParser(description="Safe local phone organizer")
+    parser.add_argument("--organize-downloads", action="store_true", help="preview and optionally organize top-level files in Downloads")
+    parser.add_argument("--undo-last-downloads", action="store_true", help="preview and optionally reverse the latest Downloads organization")
+    args = parser.parse_args()
+    if args.organize_downloads:
+        return organize_downloads()
+    if args.undo_last_downloads:
+        return undo_last_downloads()
     if not ROOT.exists():
         print("Shared storage path not found. Run termux-setup-storage and grant permission.")
         return 2
