@@ -1,0 +1,5 @@
+[
+  {"id":"adventure_intro","speaker":"THE TRAILBLAZER","voice":"am_puck","speed":0.96,"text":"All right, explorer. The jungle trail starts here. Keep your eyes open—every little detail could lead us to the relic."},
+  {"id":"adventure_clue","speaker":"THE TRAILBLAZER","voice":"am_puck","speed":1.02,"text":"Hold on! That symbol is glowing. I think it is showing us where to go next!"},
+  {"id":"adventure_gate","speaker":"THE NARRATOR","voice":"af_sarah","speed":0.94,"text":"Beyond the ancient gate, a world of lost secrets waits to be discovered."}
+]

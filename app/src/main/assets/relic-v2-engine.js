@@ -88,20 +88,67 @@
       return getStage(state.stageId);
     }
 
-    function drawCharacter(x, floor, scale, time) {
+    function drawCharacter(x, floor, scale, time, characterState) {
       ctx.save(); ctx.translate(x, floor); ctx.scale(scale, scale);
+      const talking = !!(characterState && characterState.talking);
       const bob = reducedMotion ? 0 : Math.sin(time / 110) * 1.8;
-      // Original pulp-adventure explorer silhouette; deliberately not a copy of a film character.
-      ctx.translate(0, bob);
-      ctx.fillStyle = "#17120f"; ctx.beginPath(); ctx.ellipse(0, -2, 12, 3, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#b9844d"; ctx.fillRect(-7, -24, 14, 17);
-      ctx.fillStyle = "#493324"; ctx.fillRect(-8, -26, 16, 5);
-      ctx.fillStyle = "#d9ad79"; ctx.beginPath(); ctx.arc(0, -30, 6, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#4b3220"; ctx.fillRect(-8, -37, 16, 5); ctx.fillRect(-5, -42, 10, 6);
-      ctx.strokeStyle = "#241b14"; ctx.lineWidth = 3;
       const stride = reducedMotion ? 0 : Math.sin(time / 80) * 5;
-      ctx.beginPath(); ctx.moveTo(-3, -8); ctx.lineTo(-5 + stride, 0); ctx.moveTo(3, -8); ctx.lineTo(5 - stride, 0); ctx.stroke();
-      ctx.strokeStyle = "#d5b16c"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(6, -21); ctx.lineTo(12, -12); ctx.stroke();
+      const armSwing = reducedMotion ? 0 : Math.sin(time / 95) * 3;
+      ctx.translate(0, bob);
+
+      // Original tiny human adventurer: oversized friendly head, scarf, explorer pack and big boots.
+      // Lightweight 2D style-study placeholder; the planned final character is rigged 3D.
+      ctx.fillStyle = "rgba(0,0,0,.35)";
+      ctx.beginPath(); ctx.ellipse(0, -2, 17, 4, 0, 0, Math.PI * 2); ctx.fill();
+
+      // Backpack and rolled blanket.
+      ctx.fillStyle = "#9b633e"; ctx.fillRect(-15, -48, 10, 23);
+      ctx.fillStyle = "#d0a45f"; ctx.fillRect(-17, -49, 13, 5);
+      ctx.fillStyle = "#4c382a"; ctx.fillRect(-13, -40, 6, 7);
+      ctx.strokeStyle = "#5b3e2b"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-10, -47); ctx.lineTo(-9, -27); ctx.stroke();
+
+      // Legs and chunky boots.
+      ctx.lineCap = "round"; ctx.lineWidth = 5; ctx.strokeStyle = "#755037";
+      ctx.beginPath(); ctx.moveTo(-4, -17); ctx.lineTo(-6 + stride, -5); ctx.moveTo(4, -17); ctx.lineTo(5 - stride, -5); ctx.stroke();
+      ctx.fillStyle = "#493326";
+      ctx.beginPath(); ctx.ellipse(-7 + stride, -4, 6, 3, -0.1, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(6 - stride, -4, 6, 3, -0.1, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#d6a45e"; ctx.fillRect(-10 + stride, -5, 5, 1.5); ctx.fillRect(3 - stride, -5, 5, 1.5);
+
+      // Teal explorer jacket and belt.
+      ctx.fillStyle = "#3d826e"; ctx.beginPath(); ctx.moveTo(-8, -36); ctx.quadraticCurveTo(-11, -31, -9, -19);
+      ctx.lineTo(-5, -15); ctx.lineTo(6, -15); ctx.lineTo(10, -22); ctx.lineTo(7, -35); ctx.quadraticCurveTo(0, -40, -8, -36); ctx.fill();
+      ctx.fillStyle = "#e9c17a"; ctx.fillRect(-7, -24, 14, 3);
+      ctx.fillStyle = "#6d4932"; ctx.fillRect(3, -25, 3, 5);
+
+      // Arms and orange scarf.
+      ctx.strokeStyle = "#f0c08f"; ctx.lineWidth = 4; ctx.beginPath();
+      ctx.moveTo(-7, -33); ctx.lineTo(-10 - armSwing, -25); ctx.lineTo(-8 - armSwing, -22);
+      ctx.moveTo(7, -33); ctx.lineTo(10 + armSwing, -27); ctx.lineTo(8 + armSwing, -24); ctx.stroke();
+      ctx.fillStyle = "#e87945"; ctx.beginPath(); ctx.moveTo(-5, -38); ctx.lineTo(5, -38); ctx.lineTo(3, -33);
+      ctx.lineTo(11, -30); ctx.lineTo(8, -27); ctx.lineTo(0, -32); ctx.lineTo(-5, -34); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#ffc17a"; ctx.fillRect(-11, -34, 6, 2);
+
+      // Round face, swept hair and a readable side-facing eye.
+      ctx.fillStyle = "#f3c99d"; ctx.beginPath(); ctx.ellipse(1, -48, 11, 12, 0.08, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#5b3726"; ctx.beginPath(); ctx.moveTo(-10, -51); ctx.quadraticCurveTo(-13, -62, -3, -62);
+      ctx.quadraticCurveTo(1, -67, 7, -60); ctx.quadraticCurveTo(13, -58, 11, -51);
+      ctx.lineTo(5, -55); ctx.lineTo(-1, -54); ctx.lineTo(-6, -49); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#f3c99d"; ctx.beginPath(); ctx.arc(10, -47, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fff7df"; ctx.beginPath(); ctx.ellipse(5, -49, 2.5, 3.1, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#3d3027"; ctx.beginPath(); ctx.arc(6, -49, 1.25, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#8c4e38"; ctx.lineWidth = 1.5; ctx.beginPath();
+      if (talking) { const mouthOpen = 1.2 + (reducedMotion ? 0 : Math.abs(Math.sin(time / 55)) * 2.2); ctx.ellipse(8, -42, 2.1, mouthOpen, 0, 0, Math.PI * 2); }
+      else { ctx.moveTo(5, -42); ctx.quadraticCurveTo(8, -40, 10, -42); }
+      ctx.stroke();
+
+      // Talking cue floats above the hero while voice playback is active.
+      if (talking) {
+        ctx.fillStyle = "#fff5dc"; ctx.fillRect(9, -76, 26, 15);
+        ctx.beginPath(); ctx.moveTo(14, -61); ctx.lineTo(12, -57); ctx.lineTo(20, -61); ctx.fill();
+        ctx.fillStyle = "#6d583d";
+        for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(15 + i * 7, -69, 1.3, 0, Math.PI * 2); ctx.fill(); }
+      }
       ctx.restore();
     }
 
@@ -146,7 +193,7 @@
       if (state.frame < state.dodgeUntil) {
         ctx.fillStyle = "#e7bd7240"; ctx.beginPath(); ctx.ellipse(w * state.x - 18, floor - 9, 24, 8, 0, 0, Math.PI * 2); ctx.fill();
       }
-      drawCharacter(w * state.x, floor, Math.max(0.8, Math.min(1.3, h / 320)), state.frame);
+      drawCharacter(w * state.x, floor - state.jumpY, Math.max(0.8, Math.min(1.3, h / 320)), state.frame, state);
       // Scene marker / exit.
       ctx.fillStyle = palette[2]; ctx.fillRect(w * 0.91, floor - 44, 4, 44);
       ctx.beginPath(); ctx.moveTo(w * 0.915, floor - 43); ctx.lineTo(w * 0.97, floor - 32); ctx.lineTo(w * 0.915, floor - 21); ctx.fill();
@@ -190,6 +237,7 @@
       state,
       getStage,
       setStage,
+      setTalking(value) { state.talking = Boolean(value); draw(); },
       getStages: () => STAGES.map(s => Object.assign({}, s)),
       destroy() { state.running = false; if (state.raf) root.cancelAnimationFrame(state.raf); root.removeEventListener("keydown", keyDown); root.removeEventListener("keyup", keyUp); }
     };

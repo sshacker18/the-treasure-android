@@ -1,0 +1,8 @@
+RELIC V2 voice preview asset notes
+
+Wrapper: kokoro-onnx, MIT License: https://github.com/thewh1teagle/kokoro-onnx
+Model: Kokoro-82M, Apache-2.0 per the wrapper README: https://github.com/thewh1teagle/kokoro-onnx#license
+Model files downloaded by CI from https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.1
+Voice IDs: am_puck and af_sarah: https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md
+
+Generated audio uses original RELIC text. No real person's voice was cloned. Re-check upstream terms before commercial release.

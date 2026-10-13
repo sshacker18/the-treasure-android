@@ -2,7 +2,7 @@ name: RELIC V2 - Browser Preview Bundle
 
 on:
   push:
-    branches: ["qa/relic-v2-preview"]
+    branches: ["qa/relic-v2-preview", "qa/relic-v2-adventure-prototype"]
   workflow_dispatch:
 
 permissions:
@@ -13,16 +13,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install open voice-generation runtime
+        run: python -m pip install --disable-pip-version-check "kokoro-onnx==0.6.1" soundfile
+      - name: Download Kokoro INT8 model for voice-asset generation
+        run: |
+          mkdir -p .voice-model
+          curl --fail --location --retry 3 "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/kokoro-v1.0.int8.onnx" -o .voice-model/kokoro-v1.0.int8.onnx
+          curl --fail --location --retry 3 "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/voices-v1.0.bin" -o .voice-model/voices-v1.0.bin
+      - name: Generate and validate voice dialogue WAVs
+        run: |
+          mkdir -p preview-bundle/audio
+          python tools/generate_relic_dialogue.py --model .voice-model/kokoro-v1.0.int8.onnx --voices .voice-model/voices-v1.0.bin --output-dir preview-bundle/audio
       - name: Package standalone HTML preview
         run: |
           mkdir -p preview-bundle
           cp app/src/main/assets/relic-v2.html app/src/main/assets/relic-v2-engine.js preview-bundle/
           cp app/src/main/assets/index.html preview-bundle/classic-game.html
+          cp docs/relic-v2-adventure-character-audio-plan.md preview-bundle/TECH-NOTES.md
           cat > preview-bundle/README.txt <<'EOF'
-          RELIC V2 Browser Preview
-          Extract this folder and open relic-v2.html in a modern browser.
-          Internet access is not required for the game files.
-          This is a prototype preview; it is not a production release.
+          RELIC V2 Tiny Adventurer + Dialogue Preview
+          Extract this ZIP and open relic-v2.html in a modern browser.
+          The audio/ folder contains generated WAV dialogue clips for offline playback.
+          If you open the source HTML without the audio folder, it will try the device/browser speech fallback.
+          This is a prototype preview, not a production release or final 3D game.
           EOF
           cd preview-bundle && zip -r ../relic-v2-browser-preview.zip .
       - name: Upload browser preview
