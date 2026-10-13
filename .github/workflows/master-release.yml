@@ -2,60 +2,101 @@ name: RELIC - Master Release Pipeline
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "app/**"
-      - ".github/workflows/**"
   push:
     branches:
       - main
-      - feature/tap-to-move-auto-relics
     paths:
       - "app/**"
+      - "tests/**"
+      - "package.json"
+      - "package-lock.json"
+      - "playwright.config.js"
+      - "the_treasure_music_bundle.zip"
       - ".github/workflows/**"
 
 permissions:
   contents: read
 
 concurrency:
-  group: treasure-master-${{ github.event.pull_request.number || github.ref }}
+  group: treasure-master-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  gameplay-qa:
+    name: Gate 1 - Playwright gameplay E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install QA dependencies
+        run: npm install --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Prepare report directories
+        run: mkdir -p test-results/artifacts
+      - name: Run Playwright E2E suite
+        run: npm run test:e2e
+      - name: Upload Playwright reports, traces and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: treasure-release-gate-playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  android-build:
+    name: Gate 2 - Android build and unit tests
+    uses: ./.github/workflows/build-apk.yml
+
   signed-release:
-    name: Child 2 - Build, sign, and publish APK
+    name: Gate 3 - Sign release APK
+    needs:
+      - gameplay-qa
+      - android-build
     uses: ./.github/workflows/build-signed-apk.yml
     secrets: inherit
 
   master-summary:
-    name: Master release status
+    name: Release gate summary
     runs-on: ubuntu-latest
     if: always()
     needs:
+      - gameplay-qa
+      - android-build
       - signed-release
     steps:
-      - name: Report pipeline result
+      - name: Enforce release gates
         env:
-          RELEASE_RESULT: ${{ needs.signed-release.result }}
+          QA_RESULT: ${{ needs.gameplay-qa.result }}
+          BUILD_RESULT: ${{ needs.android-build.result }}
+          SIGN_RESULT: ${{ needs.signed-release.result }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           {
-            echo "## THE TREASURE — Master Release Pipeline"
+            echo "## THE TREASURE — Release Gate"
             echo
-            echo "- Signed production APK: **${RELEASE_RESULT}**"
+            echo "- Playwright gameplay E2E: **${QA_RESULT}**"
+            echo "- Android build and unit tests: **${BUILD_RESULT}**"
+            echo "- Signed APK: **${SIGN_RESULT}**"
             echo
-            if [ "${RELEASE_RESULT}" = "success" ]; then
-              echo "### Result: SUCCESS"
-              echo "Download the `THE-TREASURE-signed-APK` artifact from this master run."
+            if [ "${QA_RESULT}" = "success" ] && [ "${BUILD_RESULT}" = "success" ] && [ "${SIGN_RESULT}" = "success" ]; then
+              echo "### Release result: PASS"
+              echo "The signed APK is available as `THE-TREASURE-signed-APK`."
             else
-              echo "### Result: NEEDS ATTENTION"
-              echo "Open the failed child job above for the first failing step."
+              echo "### Release result: BLOCKED"
+              echo "No release is approved. Open the failed gate above and fix it before retrying."
             fi
             echo
-            echo "[Open this master run](${RUN_URL})"
+            echo "[Open this release run](${RUN_URL})"
           } >> "$GITHUB_STEP_SUMMARY"
-          if [ "${RELEASE_RESULT}" != "success" ]; then
+          if [ "${QA_RESULT}" != "success" ] || [ "${BUILD_RESULT}" != "success" ] || [ "${SIGN_RESULT}" != "success" ]; then
             exit 1
           fi
