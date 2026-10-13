@@ -1,0 +1,6 @@
+; RELIC — isolated 3D vertical-slice prototype
+; This project does not replace or modify the shipped Android WebView app.
+config_version=5
+
+[application]
+config/name="RELIC — 3D Prototype"
