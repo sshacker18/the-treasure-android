@@ -152,8 +152,11 @@ test('Chapter 3 checkpoint activates once and does not repeatedly lock movement'
 
   // Avoid the first fragment on the direct route to the checkpoint. Coordinate
   // planning reads state, but all movement and interactions are real canvas taps.
-  await tapWorldPoint(game, 500, 150);
-  await waitForPlayerNear(game, 500, 150);
+  await tapWorldPoint(game, 500, 130);
+  await waitForPlayerNear(game, 500, 130);
+  // Move into the lower half of the viewport so the checkpoint is actually visible.
+  await tapWorldPoint(game, 500, 350);
+  await waitForPlayerNear(game, 500, 350);
   await tapWorldPoint(game, 720, 520);
   await expect(game.locator('#cinema')).toHaveClass(/show/, { timeout: 10000 });
   await expect(game.locator('#ctitle')).toHaveText('SAFE GROUND');
@@ -162,8 +165,8 @@ test('Chapter 3 checkpoint activates once and does not repeatedly lock movement'
 
   // Move away and return. The checkpoint should remain activated, without
   // reopening its dialogue or holding the gameplay loop in its story pause.
-  await tapWorldPoint(game, 850, 800);
-  await waitForPlayerNear(game, 850, 800, 55);
+  await tapWorldPoint(game, 500, 350);
+  await waitForPlayerNear(game, 500, 350, 55);
   await tapWorldPoint(game, 720, 520);
   await waitForPlayerNear(game, 720, 520, 55);
   await page.waitForTimeout(300);
