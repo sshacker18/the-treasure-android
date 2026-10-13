@@ -39,7 +39,7 @@ public class MainActivity extends Activity {
                     WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
         }
         setImmersiveMode();
-        webView.loadUrl("file:///android_asset/index.html");
+        webView.loadUrl("file:///android_asset/relic-v2.html");
     }
 
     private void setImmersiveMode() {
