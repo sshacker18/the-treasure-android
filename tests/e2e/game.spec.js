@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const path = require('path');
-const gameFile = 'file://' + path.resolve('app/src/main/assets/index.html');
+const gameFile = 'file://' + path.resolve('app/src/main/assets/index.html') + '?e2e=1';
 
 const missionByChapter = {
   1: 'Find the 3 relics and reach the cave',
@@ -119,27 +119,55 @@ for (const chapter of [1, 2, 3, 4]) {
   });
 }
 
-test('Chapter 3 checkpoint activates once and does not repeatedly lock movement', async ({ page }) => {
-  test.setTimeout(40000);
-  const game = await enterChapter(page, 3);
-  const canvas = game.locator('canvas').first();
+async function chapter3State(game) {
+  const state = await game.locator('body').evaluate(() => window.__TREASURE_E2E__?.state());
+  expect(state, 'Chapter 3 read-only E2E diagnostics should be enabled').toBeTruthy();
+  return state;
+}
 
-  // Chapter 3 starts at world (90,100). Approach the checkpoint using two
-  // visible tap destinations; the camera follows the player, so the second
-  // tap targets the checkpoint after it has scrolled into view.
-  await canvas.click({ position: { x: 720, y: 350 } });
-  await page.waitForTimeout(4500);
-  await canvas.click({ position: { x: 720, y: 365 } });
+async function tapWorldPoint(game, x, y) {
+  const state = await chapter3State(game);
+  const canvas = game.locator('canvas').first();
+  const bounds = await canvas.boundingBox();
+  expect(bounds).not.toBeNull();
+  const screenX = x - state.camera.x;
+  const screenY = y - state.camera.y;
+  expect(screenX, `world X ${x} must be in the current viewport`).toBeGreaterThanOrEqual(1);
+  expect(screenX, `world X ${x} must be in the current viewport`).toBeLessThan(bounds.width - 1);
+  expect(screenY, `world Y ${y} must be in the current viewport`).toBeGreaterThanOrEqual(1);
+  expect(screenY, `world Y ${y} must be in the current viewport`).toBeLessThan(bounds.height - 1);
+  await canvas.click({ position: { x: screenX, y: screenY } });
+}
+
+async function waitForPlayerNear(game, x, y, radius = 42) {
+  await expect.poll(async () => {
+    const state = await chapter3State(game);
+    return Math.hypot(state.player.x - x, state.player.y - y);
+  }, { timeout: 10000, message: `Player should reach world position (${x}, ${y})` }).toBeLessThan(radius);
+}
+
+test('Chapter 3 checkpoint activates once and does not repeatedly lock movement', async ({ page }) => {
+  test.setTimeout(45000);
+  const game = await enterChapter(page, 3);
+
+  // Avoid the first fragment on the direct route to the checkpoint. Coordinate
+  // planning reads state, but all movement and interactions are real canvas taps.
+  await tapWorldPoint(game, 500, 150);
+  await waitForPlayerNear(game, 500, 150);
+  await tapWorldPoint(game, 720, 520);
   await expect(game.locator('#cinema')).toHaveClass(/show/, { timeout: 10000 });
   await expect(game.locator('#ctitle')).toHaveText('SAFE GROUND');
-  await expect(game.locator('#cinema')).not.toHaveClass(/show/, { timeout: 5000 });
+  await expect.poll(async () => (await chapter3State(game)).checkpoints[0].active).toBe(true);
+  await expect(game.locator('#cinema')).not.toHaveClass(/show/, { timeout: 6000 });
 
-  // Leave and return. A checkpoint that has already been activated must not
-  // reopen the same dialogue or leave the game stuck in its story-pause state.
-  await canvas.click({ position: { x: 500, y: 220 } });
-  await page.waitForTimeout(2200);
-  await canvas.click({ position: { x: 720, y: 365 } });
-  await page.waitForTimeout(2200);
+  // Move away and return. The checkpoint should remain activated, without
+  // reopening its dialogue or holding the gameplay loop in its story pause.
+  await tapWorldPoint(game, 850, 800);
+  await waitForPlayerNear(game, 850, 800, 55);
+  await tapWorldPoint(game, 720, 520);
+  await waitForPlayerNear(game, 720, 520, 55);
+  await page.waitForTimeout(300);
+  await expect.poll(async () => (await chapter3State(game)).checkpoints[0].active).toBe(true);
   await expect(game.locator('#cinema')).not.toHaveClass(/show/);
   await expect(game.locator('#virtualJoystick')).toBeVisible();
   await expect(game.locator('#hud')).toContainText('FRAGMENTS');
