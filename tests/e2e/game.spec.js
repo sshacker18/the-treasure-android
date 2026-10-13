@@ -164,10 +164,10 @@ test('Chapter 3 checkpoint activates once and does not repeatedly lock movement'
   await tapWorldPoint(game, 500, 350);
   await waitForPlayerNear(game, 500, 350);
   await tapWorldPoint(game, 720, 505);
-  await expect(game.locator('#cinema')).toHaveClass(/show/, { timeout: 10000 });
-  await expect(game.locator('#ctitle')).toHaveText('SAFE GROUND');
-  await expect.poll(async () => (await chapter3State(game)).checkpoints[0].active).toBe(true);
-  await expect(game.locator('#cinema')).not.toHaveClass(/show/, { timeout: 6000 });
+  // Checkpoint activation is now a small HUD hint, not a blocking cinematic popup.
+  await expect.poll(async () => (await chapter3State(game)).checkpoints[0].active,
+    { timeout: 10000 }).toBe(true);
+  await expect(game.locator('#cinema')).not.toHaveClass(/show/);
 
   // Move away and return. The checkpoint should remain activated, without
   // reopening its dialogue or holding the gameplay loop in its story pause.
@@ -197,6 +197,7 @@ test('mobile viewport has no horizontal shell overflow', async ({ page }) => {
 
 test('post-credits replay returns to Chapter 1 instead of leaving the ending overlay stuck', async ({ page }) => {
   await startAdventure(page);
+  await loadChapterForTest(page, 4);
   const gameFrame = page.frameLocator('#gameFrame');
   await gameFrame.locator('body').evaluate(() => {
     // Send the event from inside the iframe to the wrapper, matching the real game.
