@@ -1,4 +1,4 @@
-name: THE TREASURE - Signed APK Pipeline
+name: RELIC - Signed APK Pipeline
 
 on:
   workflow_call:
