@@ -197,9 +197,10 @@ test('mobile viewport has no horizontal shell overflow', async ({ page }) => {
 
 test('post-credits replay returns to Chapter 1 instead of leaving the ending overlay stuck', async ({ page }) => {
   await startAdventure(page);
-  await page.evaluate(() => {
-    const frame = document.getElementById('gameFrame');
-    frame.contentWindow.postMessage({ type: 'post-credits' }, '*');
+  const gameFrame = page.frameLocator('#gameFrame');
+  await gameFrame.locator('body').evaluate(() => {
+    // Send the event from inside the iframe to the wrapper, matching the real game.
+    parent.postMessage({ type: 'post-credits' }, '*');
   });
   await expect(page.locator('#postCredits')).toHaveClass(/show/);
   await expect(page.getByRole('button', { name: /PLAY AGAIN.*CHAPTER 1/i })).toBeVisible();
