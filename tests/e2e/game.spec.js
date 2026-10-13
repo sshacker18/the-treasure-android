@@ -139,11 +139,17 @@ async function tapWorldPoint(game, x, y) {
   await canvas.click({ position: { x: screenX, y: screenY } });
 }
 
-async function waitForPlayerNear(game, x, y, radius = 42) {
+async function waitForPlayerNear(game, x, y, radius = 30) {
+  // Wait until the game's tap target is cleared, not merely until the player
+  // enters a wide radius (which can interrupt movement by starting the next tap).
+  await expect.poll(async () => (await chapter3State(game)).moving, {
+    timeout: 10000,
+    message: `Tap-to-move should settle at world position (${x}, ${y})`
+  }).toBe(false);
   await expect.poll(async () => {
     const state = await chapter3State(game);
     return Math.hypot(state.player.x - x, state.player.y - y);
-  }, { timeout: 10000, message: `Player should reach world position (${x}, ${y})` }).toBeLessThan(radius);
+  }, { timeout: 3000, message: `Player should stop close to world position (${x}, ${y})` }).toBeLessThan(radius);
 }
 
 test('Chapter 3 checkpoint activates once and does not repeatedly lock movement', async ({ page }) => {
