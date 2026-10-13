@@ -197,7 +197,7 @@ func _build_hud() -> void:
 	layer.add_child(root_control)
 
 	var title := Label.new()
-	title.text = "RELIC HERO AND THE TREASURE"
+	title.text = "RELIC"
 	title.position = Vector2(22.0, 16.0)
 	title.add_theme_font_size_override("font_size", 24)
 	title.add_theme_color_override("font_color", Color("#fff0d0"))
