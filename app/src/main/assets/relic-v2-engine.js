@@ -54,7 +54,7 @@
     if (!canvas) throw new Error("RELIC V2 requires a canvas element with id stageCanvas");
     const ctx = canvas.getContext("2d");
     const reducedMotion = root.matchMedia && root.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const state = { stageId: 1, x: 0.18, y: 0, jumpY: 0, jumpV: 0, velocity: 0, running: true, frame: 0, lastTime: 0, held: new Set(), completed: false };
+    const state = { stageId: 1, x: 0.18, y: 0, jumpY: 0, jumpV: 0, velocity: 0, running: true, frame: 0, lastTime: 0, held: new Set(), action: "", actionUntil: 0, dodgeUntil: 0, completed: false };
     const width = () => Math.max(320, canvas.clientWidth || canvas.width || 800);
     const height = () => Math.max(180, canvas.clientHeight || canvas.height || 450);
 
@@ -138,6 +138,13 @@
       for (let i = 0; i < hazards; i++) {
         const hx = w * (0.42 + i * 0.105);
         ctx.fillStyle = "#c05d36"; ctx.beginPath(); ctx.moveTo(hx, floor); ctx.lineTo(hx + 9, floor - 18); ctx.lineTo(hx + 18, floor); ctx.fill();
+      }
+      if (state.action === "attack" && state.frame < state.actionUntil) {
+        ctx.save(); ctx.strokeStyle = "#f8e5ad"; ctx.lineWidth = 4; ctx.beginPath();
+        ctx.arc(w * state.x + 14, floor - state.jumpY - 25, 25, -1.15, 0.7); ctx.stroke(); ctx.restore();
+      }
+      if (state.frame < state.dodgeUntil) {
+        ctx.fillStyle = "#e7bd7240"; ctx.beginPath(); ctx.ellipse(w * state.x - 18, floor - 9, 24, 8, 0, 0, Math.PI * 2); ctx.fill();
       }
       drawCharacter(w * state.x, floor, Math.max(0.8, Math.min(1.3, h / 320)), state.frame);
       // Scene marker / exit.
