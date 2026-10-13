@@ -1,4 +1,4 @@
-name: Tester User 1 - Smoke and E2E per page
+name: RELIC - Smoke and E2E QA
 
 on:
   workflow_dispatch:
