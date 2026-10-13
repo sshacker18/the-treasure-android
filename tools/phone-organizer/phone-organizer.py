@@ -107,33 +107,34 @@ def main():
                "csv_report": str(csv_path), "json_report": str(json_path),
                "changes_made": False, "files_moved": 0, "files_renamed": 0, "files_deleted": 0}
     json_path.write_text(json.dumps({"summary": summary, "duplicates": duplicates, "files": rows}, indent=2), encoding="utf-8")
-    print("\nPHONE ORGANIZER — SAFE SCAN + DUPLICATE CHECK")
-    print("=" * 46)
-    print(f"Root: {ROOT}")
-    print(f"Files scanned: {len(rows)} | Total size: {total_bytes / (1024**3):.2f} GiB")
-    print(f"Scan warnings: {len(errors)} | Hash warnings: {len(hash_errors)}")
-    print("\nCategory summary:")
-    for cat, count in counts.most_common():
-        print(f"  {cat}: {count} files ({bytes_by_category[cat] / (1024**2):.1f} MiB)")
-    print(f"\nDuplicate check: hashed {len(candidates)} same-size candidates ({hashed_bytes / (1024**2):.1f} MiB read)")
-    print(f"Exact duplicate groups: {len(duplicates)}")
-    print(f"Potential redundant bytes (not deleted): {duplicate_extra_bytes / (1024**2):.1f} MiB")
-    for i, group in enumerate(duplicates[:10], 1):
-        print(f"  Group {i}: {len(group['paths'])} copies, {group['bytes_each'] / (1024**2):.2f} MiB each")
-        for p in group["paths"][:4]:
-            print(f"    {p}")
-        if len(group["paths"]) > 4: print(f"    ... and {len(group['paths']) - 4} more")
-    print("\nLargest files:")
-    for row in largest:
-        print(f"  {row['bytes'] / (1024**2):8.1f} MiB  {row['path']}")
-    print("\nLargest top-level folders (sum of file sizes):")
-    for folder, size in top_dirs.most_common(10):
-        print(f"  {size / (1024**2):8.1f} MiB  {folder}")
-    print("\nReports saved privately in Termux:")
-    print(f"  {csv_path}")
-    print(f"  {json_path}")
-    print("\nSafety: 0 files moved; 0 files renamed; 0 files deleted.")
-    print("Duplicate matches are based on file size + SHA-256. Review before any manual action.")
+    summary_lines = [
+        "PHONE ORGANIZER RESULT",
+        f"Files: {len(rows)} | Storage scanned: {total_bytes / (1024**3):.2f} GiB",
+        f"Warnings: scan={len(errors)}, hash={len(hash_errors)}",
+        f"Duplicate groups: {len(duplicates)}",
+        f"Potential duplicate bytes: {duplicate_extra_bytes / (1024**2):.1f} MiB (nothing removed)",
+        "Largest files:",
+    ]
+    for row in largest[:5]:
+        summary_lines.append(f"- {row['bytes'] / (1024**2):.1f} MiB | {row['name']}")
+    summary_lines.extend([
+        f"Full report: {json_path}",
+        "Safety: no files moved, renamed, or deleted.",
+    ])
+    clipboard_text = "\\n".join(summary_lines)
+    print("\\n" + clipboard_text)
+    # Optional convenience: copy only the short summary, never the full inventory.
+    import shutil, subprocess
+    clipboard = shutil.which("termux-clipboard-set")
+    if clipboard:
+        try:
+            subprocess.run([clipboard], input=clipboard_text, text=True, check=True, timeout=5)
+            print("\\nShort summary copied to clipboard. Paste it into ChatGPT only if you choose.")
+        except (OSError, subprocess.SubprocessError):
+            print("\\nClipboard copy unavailable; summary is shown above.")
+    else:
+        print("\\nTip: install Termux:API + run 'pkg install termux-api' to enable optional one-tap clipboard copy.")
+    print("\\nFull inventory stays in Termux private storage; nothing is uploaded.")
     return 0
 
 if __name__ == "__main__":
