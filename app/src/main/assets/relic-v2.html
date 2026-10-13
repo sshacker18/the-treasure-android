@@ -47,9 +47,20 @@ footer{border-top:1px solid #403020;padding:9px 14px;display:flex;justify-conten
 <header><div><div class="brand">RELIC <span style="color:#fff0d0">V2</span></div><div class="subtitle">A cinematic linear adventure</div></div><div style="display:flex;align-items:center;gap:8px"><div class="kicker">4 CHAPTERS · 16 STAGES</div><a href="index.html" style="font-size:10px;color:#d7c5aa;text-decoration:underline">Classic game</a></div></header>
 <main>
 <section class="panel" aria-label="Playable scene">
-  <div class="canvas-wrap"><canvas id="stageCanvas" width="960" height="520" aria-label="RELIC V2 playable 2D scene"></canvas></div>
+  <div class="canvas-wrap"><canvas id="stageCanvas" width="960" height="520" aria-label="RELIC V2 playable 2D scene"></canvas>
+  <div class="mobile-controls" aria-label="On-screen game controller">
+    <div id="virtualStick" class="virtual-stick" role="application" aria-label="Movement joystick"><div id="stickKnob" class="stick-knob"></div></div>
+    <div class="action-cluster" aria-label="Action buttons">
+      <button class="action-button" data-action="triangle" aria-label="Triangle: attack" title="Attack">△</button>
+      <button class="action-button" data-action="square" aria-label="Square: interact" title="Interact">□</button>
+      <button class="action-button" data-action="circle" aria-label="Circle: dodge" title="Dodge">○</button>
+      <button class="action-button" data-action="cross" aria-label="Cross: jump" title="Jump">×</button>
+    </div>
+    <div id="controlFeedback" aria-live="polite">MOVE · JUMP · INTERACT · DODGE · ATTACK</div>
+  </div>
+</div>
   <div class="hud"><div><div class="kicker" id="stageMeta">The Forgotten Jungle · Easy</div><h1 id="stageTitle">STAGE 1 · Into the Wild</h1><p id="stageObjective">Learn movement and discover the first clue.</p><div id="stageProgress">Stage 1 of 16</div></div></div>
-  <div class="mobile-controls"><button id="moveLeft" aria-label="Move left">◀</button><span style="font-size:10px;color:#aa9a81;align-self:center">MOVE</span><button id="moveRight" aria-label="Move right">▶</button></div>
+  
   <div class="hud controls"><button id="prevStage" aria-label="Previous stage" disabled>← Previous</button><button class="primary" id="nextStage" aria-label="Next stage">Next Stage →</button></div>
 </section>
 <aside class="panel">
