@@ -2,7 +2,7 @@ name: RELIC - Playwright Game QA
 
 on:
   push:
-    branches: [main, "qa/**"]
+    branches: ["qa/**", "ci/**"]
   pull_request:
     branches: [main]
   workflow_dispatch:
