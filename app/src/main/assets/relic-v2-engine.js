@@ -174,10 +174,6 @@
       if (root.ResizeObserver) new root.ResizeObserver(resize).observe(canvas);
       else root.addEventListener("resize", resize);
     }
-    const prev = root.document && root.document.querySelector("#prevStage");
-    const next = root.document && root.document.querySelector("#nextStage");
-    if (prev) prev.addEventListener("click", () => setStage(state.stageId - 1));
-    if (next) next.addEventListener("click", () => setStage(state.stageId + 1));
     const left = root.document && root.document.querySelector("#moveLeft");
     const right = root.document && root.document.querySelector("#moveRight");
     if (left) { left.addEventListener("pointerdown", () => state.held.add("left")); ["pointerup", "pointercancel", "pointerleave"].forEach(e => left.addEventListener(e, () => state.held.delete("left"))); }
