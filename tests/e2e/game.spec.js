@@ -194,3 +194,18 @@ test('mobile viewport has no horizontal shell overflow', async ({ page }) => {
   expect(dimensions.height).toBeGreaterThan(0);
   await page.screenshot({ path: 'test-results/artifacts/mobile-start-screen.png', fullPage: true });
 });
+
+test('post-credits replay returns to Chapter 1 instead of leaving the ending overlay stuck', async ({ page }) => {
+  await startAdventure(page);
+  await page.evaluate(() => {
+    const frame = document.getElementById('gameFrame');
+    frame.contentWindow.postMessage({ type: 'post-credits' }, '*');
+  });
+  await expect(page.locator('#postCredits')).toHaveClass(/show/);
+  await expect(page.getByRole('button', { name: /PLAY AGAIN.*CHAPTER 1/i })).toBeVisible();
+  await page.getByRole('button', { name: /PLAY AGAIN.*CHAPTER 1/i }).click();
+  await expect(page.locator('#postCredits')).not.toHaveClass(/show/);
+  await expect(page.locator('#chapterLabel')).toContainText('Chapter 1');
+  await expect(page.frameLocator('#gameFrame').locator('#missionText')).toHaveText(missionByChapter[1]);
+  await expect(page.frameLocator('#gameFrame').locator('#overlay')).toHaveClass(/hidden/);
+});
