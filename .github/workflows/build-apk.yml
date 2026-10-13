@@ -1,8 +1,9 @@
 name: RELIC - Build, Test, and APK Artifacts
 
 on:
+  workflow_call:
   push:
-    branches: [main, "qa/**", "ci/**"]
+    branches: ["qa/**", "ci/**"]
   pull_request:
     branches: [main]
   workflow_dispatch:
