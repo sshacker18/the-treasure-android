@@ -195,7 +195,7 @@ test('mobile viewport has no horizontal shell overflow', async ({ page }) => {
   await page.screenshot({ path: 'test-results/artifacts/mobile-start-screen.png', fullPage: true });
 });
 
-test('post-credits replay returns to Chapter 1 instead of leaving the ending overlay stuck', async ({ page }) => {
+test('post-credits replay returns to intro card and starts a fresh Chapter 1 run', async ({ page }) => {
   await startAdventure(page);
   await loadChapterForTest(page, 4);
   const gameFrame = page.frameLocator('#gameFrame');
@@ -207,7 +207,13 @@ test('post-credits replay returns to Chapter 1 instead of leaving the ending ove
   await expect(page.getByRole('button', { name: /PLAY AGAIN.*CHAPTER 1/i })).toBeVisible();
   await page.getByRole('button', { name: /PLAY AGAIN.*CHAPTER 1/i }).click();
   await expect(page.locator('#postCredits')).not.toHaveClass(/show/);
+  await expect(page.locator('#intro')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'START THE ADVENTURE' })).toBeVisible();
   await expect(page.locator('#chapterLabel')).toContainText('Chapter 1');
-  await expect(page.frameLocator('#gameFrame').locator('#missionText')).toHaveText(missionByChapter[1]);
-  await expect(page.frameLocator('#gameFrame').locator('#overlay')).toHaveClass(/hidden/);
+  await page.getByRole('button', { name: 'START THE ADVENTURE' }).click();
+  await expect(page.locator('#intro')).toBeHidden();
+  await expect(page.locator('#loading')).toBeHidden();
+  const freshGame = page.frameLocator('#gameFrame');
+  await expect(freshGame.locator('#missionText')).toHaveText(missionByChapter[1]);
+  await expect(freshGame.locator('#overlay')).toHaveClass(/hidden/);
 });
