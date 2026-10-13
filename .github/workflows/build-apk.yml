@@ -131,6 +131,42 @@ jobs:
       - name: Build unsigned Android App Bundle
         run: gradle bundleRelease --no-daemon
 
+      - name: Build signed release APK when upload-key secrets are configured
+        shell: bash
+        env:
+          PLAY_UPLOAD_KEYSTORE_BASE64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
+          PLAY_UPLOAD_STORE_PASSWORD: ${{ secrets.PLAY_UPLOAD_STORE_PASSWORD }}
+          PLAY_UPLOAD_KEY_ALIAS: ${{ secrets.PLAY_UPLOAD_KEY_ALIAS }}
+          PLAY_UPLOAD_KEY_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${PLAY_UPLOAD_KEYSTORE_BASE64:-}" || -z "${PLAY_UPLOAD_STORE_PASSWORD:-}" || -z "${PLAY_UPLOAD_KEY_ALIAS:-}" || -z "${PLAY_UPLOAD_KEY_PASSWORD:-}" ]]; then
+            echo "Signing secrets are not fully configured; skipping signed APK. Unsigned release artifact remains available."
+            exit 0
+          fi
+          KEYSTORE_PATH="$RUNNER_TEMP/play-upload-keystore.jks"
+          printf '%s' "$PLAY_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          test -s "$KEYSTORE_PATH"
+          export PLAY_UPLOAD_KEYSTORE_PATH="$KEYSTORE_PATH"
+          gradle assembleRelease --no-daemon
+          SIGNED_APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$SIGNED_APK"
+          mkdir -p build-metadata
+          cp "$SIGNED_APK" build-metadata/THE-TREASURE-signed.apk
+          sha256sum build-metadata/THE-TREASURE-signed.apk > build-metadata/THE-TREASURE-signed-SHA256SUM.txt
+          cat build-metadata/THE-TREASURE-signed-SHA256SUM.txt
+
+      - name: Upload signed release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: THE-TREASURE-signed-APK
+          path: |
+            build-metadata/THE-TREASURE-signed.apk
+            build-metadata/THE-TREASURE-signed-SHA256SUM.txt
+          if-no-files-found: ignore
+          retention-days: 14
+
+
       - name: Generate artifact manifest and enforce APK size budget
         shell: bash
         run: |
