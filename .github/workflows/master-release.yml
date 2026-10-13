@@ -19,7 +19,7 @@ permissions:
 
 concurrency:
   group: treasure-master-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   gameplay-qa:
