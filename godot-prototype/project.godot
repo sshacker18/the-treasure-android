@@ -1,9 +1,9 @@
-; Rennie and the Treasure — isolated 3D vertical-slice prototype
+; RELIC — 3D Prototype — isolated 3D vertical-slice prototype
 ; This project does not replace or modify the shipped Android WebView app.
 config_version=5
 
 [application]
-config/name="Rennie and the Treasure — 3D Prototype"
+config/name="RELIC — 3D Prototype — 3D Prototype"
 run/main_scene="res://scenes/main.tscn"
 
 [display]
