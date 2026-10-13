@@ -82,35 +82,61 @@ test('tapping a relic destination moves the player and auto-collects the relic',
   await expect(game.locator('#hud')).toContainText('RELICS 1/3', { timeout: 10000 });
 });
 
+const objectiveByChapter = {
+  1: { target: { x: 310, y: 180 }, hud: 'RELICS 1/3' },
+  2: { target: { x: 290, y: 235 }, hud: 'SEALS 1/3' },
+  3: { target: { x: 300, y: 210 }, hud: 'FRAGMENTS 1/5' },
+  4: { target: { x: 320, y: 240 }, hud: 'SHARDS 1/4' }
+};
+
+async function enterChapter(page, chapterNumber) {
+  await startAdventure(page);
+  if (chapterNumber > 1) await loadChapterForTest(page, chapterNumber);
+  const game = page.frameLocator('#gameFrame');
+  await expect(game.locator('#overlay')).toHaveClass(/hidden/);
+  await expect(game.locator('#missionText')).toHaveText(missionByChapter[chapterNumber]);
+  await expect(game.locator('#miniMapWrap')).toBeVisible();
+  await expect(game.locator('#virtualJoystick')).toBeVisible();
+  return game;
+}
+
 for (const chapter of [1, 2, 3, 4]) {
-  test(`Chapter ${chapter} smoke: mission HUD, minimap, movement and story UI load`, async ({ page }) => {
-    const game = chapter === 1
-      ? await startAdventure(page)
-      : await (async () => {
-          await startAdventure(page);
-          return loadChapterForTest(page, chapter);
-        })();
-
-    await expect(game.locator('#missionText')).toHaveText(missionByChapter[chapter]);
-    await expect(game.locator('#miniMapWrap')).toBeVisible();
-    await expect(game.locator('#miniMap')).toBeVisible();
-    await expect(game.locator('#virtualJoystick')).toBeVisible();
-    await expect(game.locator('#bottom')).toHaveCSS('display', 'none');
-    await expect(game.locator('.pad')).toHaveCSS('display', 'none');
-    await expect(game.locator('#actions')).toHaveCSS('display', 'none');
-
-    const canvas = game.locator('canvas').first();
-    const bounds = await canvas.boundingBox();
-    expect(bounds).not.toBeNull();
-    await canvas.click({
-      position: {
-        x: Math.max(12, Math.min(bounds.width - 12, bounds.width * 0.65)),
-        y: Math.max(12, Math.min(bounds.height - 12, bounds.height * 0.55))
-      }
-    });
+  test(`Chapter ${chapter} gameplay E2E: move to and automatically collect the first objective`, async ({ page }) => {
+    test.setTimeout(35000);
+    const game = await enterChapter(page, chapter);
+    const objective = objectiveByChapter[chapter];
+    const canvas = game.locator('canvas#c');
     await expect(canvas).toBeVisible();
+
+    // Use the same tap-to-move input available to the player. Do not set
+    // internal game state or invoke the collection handler directly.
+    await canvas.click({ position: objective.target });
+    await expect(game.locator('#hud')).toContainText(objective.hud, { timeout: 12000 });
+    await expect(game.locator('#missionText')).toHaveText(missionByChapter[chapter]);
   });
 }
+
+test('Chapter 3 checkpoint activates once and does not repeatedly lock movement', async ({ page }) => {
+  test.setTimeout(40000);
+  const game = await enterChapter(page, 3);
+  const canvas = game.locator('canvas#c');
+
+  // Activate the first checkpoint through tap-to-move and automatic interaction.
+  await canvas.click({ position: { x: 720, y: 520 } });
+  await expect(game.locator('#cinema')).toHaveClass(/show/, { timeout: 10000 });
+  await expect(game.locator('#ctitle')).toHaveText('SAFE GROUND');
+  await expect(game.locator('#cinema')).not.toHaveClass(/show/, { timeout: 5000 });
+
+  // Leave and return. A checkpoint that has already been activated must not
+  // reopen the same dialogue or leave the game stuck in its story-pause state.
+  await canvas.click({ position: { x: 500, y: 400 } });
+  await page.waitForTimeout(1800);
+  await canvas.click({ position: { x: 720, y: 520 } });
+  await page.waitForTimeout(1800);
+  await expect(game.locator('#cinema')).not.toHaveClass(/show/);
+  await expect(game.locator('#virtualJoystick')).toBeVisible();
+  await expect(game.locator('#hud')).toContainText('FRAGMENTS');
+});
 
 test('mobile viewport has no horizontal shell overflow', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
