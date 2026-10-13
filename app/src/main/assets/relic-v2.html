@@ -140,7 +140,9 @@ footer{border-top:1px solid #403020;padding:9px 14px;display:flex;justify-conten
   }
   stick.addEventListener("pointerdown", event => { stickPointer = event.pointerId; if (stick.setPointerCapture) { try { stick.setPointerCapture(event.pointerId); } catch (_) {} } updateStick(event); });
   stick.addEventListener("pointermove", event => { if (stickPointer === event.pointerId) updateStick(event); });
-  ["pointerup","pointercancel","lostpointercapture"].forEach(type => stick.addEventListener(type, resetStick));
+  ["pointerup","pointercancel","lostpointercapture"].forEach(type => stick.addEventListener(type, event => { if (stickPointer === null || event.pointerId === undefined || event.pointerId === stickPointer) resetStick(); }));
+  window.addEventListener("blur", resetStick);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) resetStick(); });
 
   document.querySelectorAll("[data-action]").forEach(button => {
     const activate = event => { event.preventDefault(); game.performAction(button.dataset.action); document.querySelector("#controlFeedback").textContent = game.state.action.toUpperCase() + " · READY"; };
