@@ -2,7 +2,16 @@ const { test, expect } = require('@playwright/test');
 const path = require('path');
 const gameFile = 'file://' + path.resolve('app/src/main/assets/index.html');
 
+const missionByChapter = {
+  1: 'Find the 3 relics and reach the cave',
+  2: 'Recover the 3 seals and open the gate',
+  3: 'Recover 5 fragments and reach the exit',
+  4: 'Find 4 heart-shards and face the Heart'
+};
+
 async function startAdventure(page) {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
   await page.goto(gameFile);
   await expect(page.getByRole('button', { name: 'START THE ADVENTURE' })).toBeVisible();
   await page.getByRole('button', { name: 'START THE ADVENTURE' }).click();
@@ -12,15 +21,18 @@ async function startAdventure(page) {
   await expect(game.locator('body')).toBeVisible();
   await expect(game.locator('canvas').first()).toBeVisible();
   await expect(game.locator('#overlay')).toHaveClass(/hidden/);
+  expect(errors, 'uncaught JavaScript errors during launch').toEqual([]);
   return game;
 }
 
-async function chooseChapter(page, chapterNumber) {
-  await page.getByRole('button', { name: 'Open pause and chapter menu' }).click();
-  await expect(page.locator('#chapterDrawer')).toHaveClass(/open/);
-  await page.locator('#chapterDrawer').getByRole('button', { name: 'CHAPTER ' + chapterNumber, exact: true }).click();
-  await expect(page.locator('#loading')).toBeHidden();
-  await expect(page.locator('#chapterLabel')).toContainText('Chapter ' + chapterNumber);
+async function loadChapterForTest(page, chapterNumber) {
+  // Chapter selection is intentionally not exposed in the player-facing UI.
+  // Use the wrapper's internal loader only as a test harness to smoke-test every embedded chapter.
+  await page.evaluate((index) => {
+    if (typeof window.loadChapter !== 'function') throw new Error('Internal chapter loader unavailable');
+    window.loadChapter(index);
+  }, chapterNumber - 1);
+  await expect(page.locator('#loading')).toBeHidden({ timeout: 15000 });
   const game = page.frameLocator('#gameFrame');
   await expect(game.locator('body')).toBeVisible();
   await expect(game.locator('canvas').first()).toBeVisible();
@@ -28,29 +40,39 @@ async function chooseChapter(page, chapterNumber) {
   return game;
 }
 
-test('start screen teaches tap-to-move and Chapter 1 explains automatic relic pickup', async ({ page }) => {
+test('start screen teaches tap-to-move and automatic pickups', async ({ page }) => {
   await page.goto(gameFile);
   await expect(page.locator('#intro')).toContainText('Quick tutorial');
   await page.getByRole('button', { name: 'START THE ADVENTURE' }).click();
+  await expect(page.locator('#intro')).toBeHidden();
   const game = page.frameLocator('#gameFrame');
-  await expect(game.locator('#overlay .panel')).toContainText('How to play');
-  await expect(game.locator('#overlay .panel')).toContainText('collect it automatically');
+  await expect(game.locator('#missionHud')).toBeVisible();
+  await expect(game.locator('#missionText')).toHaveText(missionByChapter[1]);
 });
 
-test('shell starts the adventure without uncaught JavaScript errors', async ({ page }) => {
-  const errors = [];
-  page.on('pageerror', error => errors.push(error.message));
-  await startAdventure(page);
-  expect(errors, 'uncaught JavaScript errors').toEqual([]);
-  await expect(page.locator('#immersiveMenu')).toBeVisible();
-});
-
-test('Chapter 1 uses tap-to-move and hides legacy movement/action controls', async ({ page }) => {
+test('launch is immersive and has no uncaught JavaScript errors', async ({ page }) => {
   const game = await startAdventure(page);
-  await expect(game.locator('canvas#game')).toBeVisible();
+  await expect(page.locator('#immersiveMenu')).toBeHidden();
+  await expect(game.locator('#bottom')).toHaveCSS('display', 'none');
+  await expect(game.locator('#actions')).toHaveCSS('display', 'none');
+});
+
+test('Chapter 1 exposes only the compact HUD, minimap, joystick and two-option assistant', async ({ page }) => {
+  const game = await startAdventure(page);
+  await expect(game.locator('#missionHud')).toBeVisible();
+  await expect(game.locator('#missionText')).toHaveText(missionByChapter[1]);
+  await expect(game.locator('#miniMapWrap')).toBeVisible();
+  await expect(game.locator('#miniMap')).toBeVisible();
+  await expect(game.locator('#virtualJoystick')).toBeVisible();
   await expect(game.locator('.pad')).toHaveCSS('display', 'none');
-  await expect(game.locator('#interact')).toHaveCSS('display', 'none');
-  await expect(game.locator('#up, #down, #left, #right')).toHaveCount(4);
+  await game.locator('#assistantButton').click();
+  await expect(game.locator('#assistantPanel')).toHaveClass(/open/);
+  await expect(game.locator('#assistantPanel button')).toHaveCount(2);
+  await expect(game.locator('#assistantMission')).toBeVisible();
+  await expect(game.locator('#assistantControls')).toBeVisible();
+  await game.locator('#assistantMission').click();
+  await expect(game.locator('#assistantDialog')).toHaveClass(/open/);
+  await expect(game.locator('#assistantDialog')).toContainText('Mission guide');
 });
 
 test('tapping a relic destination moves the player and auto-collects the relic', async ({ page }) => {
@@ -61,37 +83,34 @@ test('tapping a relic destination moves the player and auto-collects the relic',
 });
 
 for (const chapter of [1, 2, 3, 4]) {
-  test(`Chapter ${chapter} smoke: loads, starts, and keeps manual controls hidden`, async ({ page }) => {
-    const game = chapter === 1 ? await startAdventure(page) : await (async () => {
-      await startAdventure(page);
-      return chooseChapter(page, chapter);
-    })();
-    await expect(page.locator('#chapterLabel')).toContainText('Chapter ' + chapter);
-    await expect(game.locator('canvas').first()).toBeVisible();
-    await expect(game.locator('#overlay')).toHaveClass(/hidden/);
-    if (chapter === 4) {
-      await expect(game.locator('#overlay .panel')).toContainText('Final chapter tutorial');
-      await expect(game.locator('#overlay .panel')).toContainText('shockwaves');
-    }
+  test(`Chapter ${chapter} smoke: mission HUD, minimap, movement and story UI load`, async ({ page }) => {
+    const game = chapter === 1
+      ? await startAdventure(page)
+      : await (async () => {
+          await startAdventure(page);
+          return loadChapterForTest(page, chapter);
+        })();
+
+    await expect(game.locator('#missionText')).toHaveText(missionByChapter[chapter]);
+    await expect(game.locator('#miniMapWrap')).toBeVisible();
+    await expect(game.locator('#miniMap')).toBeVisible();
+    await expect(game.locator('#virtualJoystick')).toBeVisible();
+    await expect(game.locator('#bottom')).toHaveCSS('display', 'none');
     await expect(game.locator('.pad')).toHaveCSS('display', 'none');
-    const action = game.locator('#interact, #act');
-    await expect(action).toHaveCount(1);
-    await expect(action).toHaveCSS('display', 'none');
+    await expect(game.locator('#actions')).toHaveCSS('display', 'none');
+
     const canvas = game.locator('canvas').first();
     const bounds = await canvas.boundingBox();
-    await canvas.click({ position: { x: Math.max(12, Math.min(bounds.width - 12, bounds.width * 0.65)), y: Math.max(12, Math.min(bounds.height - 12, bounds.height * 0.55)) } });
+    expect(bounds).not.toBeNull();
+    await canvas.click({
+      position: {
+        x: Math.max(12, Math.min(bounds.width - 12, bounds.width * 0.65)),
+        y: Math.max(12, Math.min(bounds.height - 12, bounds.height * 0.55))
+      }
+    });
     await expect(canvas).toBeVisible();
   });
 }
-
-test('chapter menu switches chapters and resumes cleanly', async ({ page }) => {
-  await startAdventure(page);
-  await chooseChapter(page, 3);
-  await page.getByRole('button', { name: 'Open pause and chapter menu' }).click();
-  await expect(page.locator('#chapterDrawer')).toHaveClass(/open/);
-  await page.getByRole('button', { name: 'RESUME GAME' }).click();
-  await expect(page.locator('#chapterDrawer')).not.toHaveClass(/open/);
-});
 
 test('mobile viewport has no horizontal shell overflow', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
