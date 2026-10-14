@@ -281,7 +281,6 @@ function installCampaignSceneObserver(){
    campaignLastObjective=Math.max(campaignLastObjective,collected);
    if(collected>=1&&campaignSceneShown<2)showCampaignScene(current+1,2);
    if(collected>=Math.max(2,Math.ceil(total*.6))&&campaignSceneShown<3)showCampaignScene(current+1,3);
-   if(collected>=total&&campaignSceneShown<4)showCampaignScene(current+1,4);
   };
   campaignObserver=new MutationObserver(observeHud);
   campaignObserver.observe(hud,{subtree:true,childList:true,characterData:true,attributes:true});
@@ -346,7 +345,11 @@ document.getElementById('next').addEventListener('click',()=>{if(!launched){laun
 let transitionTimer=null;
 window.addEventListener('message',event=>{
  if(event.source!==frame.contentWindow||!event.data)return;
- if(event.data.type==='post-credits'&&current===CHAPTERS.length-1){document.getElementById('postCredits').classList.add('show');return;}
+ if(event.data.type==='post-credits'&&current===CHAPTERS.length-1){
+  showCampaignScene(current+1,4);
+  setTimeout(()=>document.getElementById('postCredits').classList.add('show'),6500);
+  return;
+ }
  if(event.data.type!=='chapter-complete')return;
  showCampaignScene(current+1,4);
  if(event.data.chapter!==current+1||current>=CHAPTERS.length-1)return;
