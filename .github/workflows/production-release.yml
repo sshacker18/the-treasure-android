@@ -62,7 +62,7 @@ jobs:
           assert len(scene_ids) == len(set(scene_ids)) == 16, "Scene IDs must be unique across the campaign"
           assert manifest.get("progression", {}).get("linear") is True, "Campaign must enforce linear progression"
           assert 'applicationId = "com.thetreasure.game"' in gradle, "Application ID must remain stable for in-place updates"
-          assert re_version := __import__("re").search(r'versionCode\\s*=\\s*([1-9]\\d*)', gradle), "versionCode must be positive"
+          assert __import__("re").search(r'versionCode\s*=\s*([1-9]\d*)', gradle), "versionCode must be positive"
           assert "window.TREASURE_CAMPAIGN" in html, "Campaign manifest is not connected to the actual game runtime"
           assert "data-scene-id" in html or "sceneId" in html, "No scene identity/progression hook is wired into the game runtime"
           assert "TREASURE_AUDIO_ENGINE" in html or "TREASURE_AUDIO_TRACKS" in html, "No audio runtime/track integration marker found"
