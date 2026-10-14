@@ -76,6 +76,8 @@ test('the final application shows its first story scene when the adventure start
   await expect(page.locator('#storySceneOverlay')).toHaveAttribute('data-scene-id', 'ch1-sc1', { timeout: 15000 });
   await expect(page.locator('#storySceneTitle')).toHaveText('The Forgotten Trail');
   await expect(page.locator('#storySceneBeat')).toContainText('Emerald Wilds');
+  await expect(page.locator('#storySceneEnvironment')).toContainText('sunlit jungle trail');
+  expect(await page.evaluate(() => window.TREASURE_AUDIO_ENGINE.state().musicCue)).toBe('jungle_morning');
   await expect(page.locator('#storySpeaker')).toHaveText('Rennie');
   await expect(page.locator('#storyLine')).toContainText('map');
 });
