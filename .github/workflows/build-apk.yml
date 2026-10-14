@@ -14,6 +14,7 @@ permissions:
 jobs:
   build-test:
     name: Build and validate Android APKs
+    if: ${{ !startsWith(github.head_ref, 'release/') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
