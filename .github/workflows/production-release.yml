@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   tester-user-1:
-    name: Tester User 1 - Playwright MCP/E2E gate
+    name: Tester User 1 - Playwright E2E gate
     uses: ./.github/workflows/tester-user-1.yml
 
   campaign-contract:
