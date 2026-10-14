@@ -1,0 +1,436 @@
+{
+  "schemaVersion": 1,
+  "gameTitle": "THE TREASURE",
+  "campaignTitle": "The Relic of the Four Realms",
+  "language": "en",
+  "progression": {
+    "chapterCount": 4,
+    "scenesPerChapter": 4,
+    "linear": true,
+    "chapterUnlock": "previous_chapter_complete",
+    "sceneUnlock": "previous_scene_complete"
+  },
+  "chapters": [
+    {
+      "id": "chapter-1",
+      "number": 1,
+      "title": "Whispers in the Emerald Wilds",
+      "theme": "jungle",
+      "storyArc": "Rennie follows an old map into a living jungle and learns that the relic is a promise, not a prize.",
+      "scenes": [
+        {
+          "id": "ch1-sc1",
+          "number": 1,
+          "title": "The Forgotten Trail",
+          "environment": "sunlit jungle trail, towering trees, drifting pollen, distant waterfall",
+          "objective": "Follow the trail to the broken stone marker",
+          "story": "At dawn, Rennie enters the Emerald Wilds with a weathered map left by his grandfather.",
+          "dialogue": [
+            {
+              "speaker": "Rennie",
+              "line": "The map ends here. The rest must be hidden in the forest."
+            },
+            {
+              "speaker": "Mira",
+              "line": "Listen to the birds. The old path is still alive."
+            }
+          ],
+          "musicCue": "jungle_morning",
+          "ambienceCue": "birds_wind",
+          "sfxCues": [
+            "footsteps_grass",
+            "map_unfold"
+          ]
+        },
+        {
+          "id": "ch1-sc2",
+          "number": 2,
+          "title": "The Three Lost Relics",
+          "environment": "mossy clearing, giant roots, sunbeams, three ancient relic stones",
+          "objective": "Collect three relic stones",
+          "story": "Three stones hold the first clue. Their symbols glow when brought together.",
+          "dialogue": [
+            {
+              "speaker": "Mira",
+              "line": "Each stone remembers a piece of the story."
+            },
+            {
+              "speaker": "Rennie",
+              "line": "Then we will put the story back together."
+            }
+          ],
+          "musicCue": "jungle_discovery",
+          "ambienceCue": "forest_canopy",
+          "sfxCues": [
+            "relic_pickup",
+            "stone_resonance"
+          ]
+        },
+        {
+          "id": "ch1-sc3",
+          "number": 3,
+          "title": "The River Crossing",
+          "environment": "shallow turquoise river, stepping stones, hanging vines, spray in the sunlight",
+          "objective": "Cross the river and reach the far bank",
+          "story": "The river blocks the trail. Rennie spots safe stones and a vine bridge worn by time.",
+          "dialogue": [
+            {
+              "speaker": "Mira",
+              "line": "Take your time. The river rewards patience."
+            },
+            {
+              "speaker": "Rennie",
+              "line": "One step, one breath. We cross together."
+            }
+          ],
+          "musicCue": "river_crossing",
+          "ambienceCue": "flowing_water",
+          "sfxCues": [
+            "water_splash",
+            "vine_creak"
+          ]
+        },
+        {
+          "id": "ch1-sc4",
+          "number": 4,
+          "title": "The Cave of Echoes",
+          "environment": "fern-covered cave entrance, carved lintel, blue fireflies, warm relic glow",
+          "objective": "Reach the cave door and reveal the first seal",
+          "story": "The three stones open a hidden cave. A symbol on the door matches the map's oldest mark.",
+          "dialogue": [
+            {
+              "speaker": "Rennie",
+              "line": "This is only the beginning."
+            },
+            {
+              "speaker": "Mira",
+              "line": "Then let the first seal guide the way forward."
+            }
+          ],
+          "musicCue": "cave_reveal",
+          "ambienceCue": "cave_drips",
+          "sfxCues": [
+            "stone_door_open",
+            "seal_unlock"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chapter-2",
+      "number": 2,
+      "title": "Secrets Beneath the Sand",
+      "theme": "desert_ruins",
+      "storyArc": "Beneath a desert city, Rennie discovers that the relic was protected to keep its power from being misused.",
+      "scenes": [
+        {
+          "id": "ch2-sc1",
+          "number": 1,
+          "title": "The Sunken Gate",
+          "environment": "golden dunes, half-buried archway, heat shimmer, distant sandstone towers",
+          "objective": "Find the entrance to the buried city",
+          "story": "The first seal points across the desert to a city swallowed by sand.",
+          "dialogue": [
+            {
+              "speaker": "Mira",
+              "line": "The wind has hidden this place for centuries."
+            },
+            {
+              "speaker": "Rennie",
+              "line": "But it could not hide it forever."
+            }
+          ],
+          "musicCue": "desert_arrival",
+          "ambienceCue": "desert_wind",
+          "sfxCues": [
+            "sand_steps",
+            "gate_rumble"
+          ]
+        },
+        {
+          "id": "ch2-sc2",
+          "number": 2,
+          "title": "The Three Sun Seals",
+          "environment": "sunlit sandstone hall, mirrored shafts of light, carved floor puzzle",
+          "objective": "Recover three sun seals",
+          "story": "The city tests observation rather than strength; each seal redirects a beam toward the central door.",
+          "dialogue": [
+            {
+              "speaker": "Mira",
+              "line": "The answer is in how the light moves."
+            },
+            {
+              "speaker": "Rennie",
+              "line": "The builders left us a lesson, not a trap."
+            }
+          ],
+          "musicCue": "desert_puzzle",
+          "ambienceCue": "ruin_air",
+          "sfxCues": [
+            "seal_pickup",
+            "light_prism"
+          ]
+        },
+        {
+          "id": "ch2-sc3",
+          "number": 3,
+          "title": "The Hall of Names",
+          "environment": "vast sandstone library, painted murals, dust motes, broken shelves and statues",
+          "objective": "Read the mural and locate the hidden passage",
+          "story": "A mural tells of guardians who divided the relic's path so no single ruler could claim it.",
+          "dialogue": [
+            {
+              "speaker": "Rennie",
+              "line": "They were protecting people from the relic."
+            },
+            {
+              "speaker": "Mira",
+              "line": "Remember that when you finally reach it."
+            }
+          ],
+          "musicCue": "ancient_library",
+          "ambienceCue": "hollow_hall",
+          "sfxCues": [
+            "mural_reveal",
+            "hidden_latch"
+          ]
+        },
+        {
+          "id": "ch2-sc4",
+          "number": 4,
+          "title": "The Gate Below",
+          "environment": "descending stairwell, underground blue pool, giant bronze door and three glowing sockets",
+          "objective": "Place the seals and open the lower gate",
+          "story": "The seals open a stairway into the mountain, where the next clue waits beyond an ancient gate.",
+          "dialogue": [
+            {
+              "speaker": "Mira",
+              "line": "The city is behind us. There is no turning back now."
+            },
+            {
+              "speaker": "Rennie",
+              "line": "We go forward, and we remember why."
+            }
+          ],
+          "musicCue": "descent_reveal",
+          "ambienceCue": "underground_water",
+          "sfxCues": [
+            "bronze_gate",
+            "deep_echo"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chapter-3",
+      "number": 3,
+      "title": "The Shattered Mountain",
+      "theme": "mountain_ruins",
+      "storyArc": "Rennie reunites fragments of the relic and faces the cost of pursuing a legend.",
+      "scenes": [
+        {
+          "id": "ch3-sc1",
+          "number": 1,
+          "title": "The Cliffside Path",
+          "environment": "high mountain path, pine forest, cloud sea, rope bridges and distant peaks",
+          "objective": "Reach the mountain checkpoint",
+          "story": "A narrow path climbs above the clouds. The fragments react to a beacon on the summit.",
+          "dialogue": [
+            {
+              "speaker": "Mira",
+              "line": "The summit beacon is older than the city below."
+            },
+            {
+              "speaker": "Rennie",
+              "line": "Then it has been waiting a long time."
+            }
+          ],
+          "musicCue": "mountain_ascent",
+          "ambienceCue": "high_wind",
+          "sfxCues": [
+            "gravel_steps",
+            "rope_bridge"
+          ]
+        },
+        {
+          "id": "ch3-sc2",
+          "number": 2,
+          "title": "The Five Fragments",
+          "environment": "crystal cavern, fractured pillars, reflective pools and five floating fragments",
+          "objective": "Recover five relic fragments",
+          "story": "The relic was split into fragments so its power could not be controlled by one person.",
+          "dialogue": [
+            {
+              "speaker": "Rennie",
+              "line": "Every fragment carries the same light."
+            },
+            {
+              "speaker": "Mira",
+              "line": "And every choice we make changes what that light becomes."
+            }
+          ],
+          "musicCue": "crystal_cavern",
+          "ambienceCue": "crystal_hum",
+          "sfxCues": [
+            "fragment_pickup",
+            "crystal_chime"
+          ]
+        },
+        {
+          "id": "ch3-sc3",
+          "number": 3,
+          "title": "The Guardian's Memory",
+          "environment": "ancient observatory, rotating star map, painted constellations and drifting embers",
+          "objective": "Activate the observatory and witness the memory",
+          "story": "An echo of the first guardian reveals that the relic amplifies the heart of whoever carries it.",
+          "dialogue": [
+            {
+              "speaker": "Guardian Echo",
+              "line": "Power does not make a person worthy. It reveals what was already there."
+            },
+            {
+              "speaker": "Rennie",
+              "line": "Then I must be honest about what I want."
+            }
+          ],
+          "musicCue": "guardian_memory",
+          "ambienceCue": "observatory_hum",
+          "sfxCues": [
+            "star_map",
+            "memory_pulse"
+          ]
+        },
+        {
+          "id": "ch3-sc4",
+          "number": 4,
+          "title": "The Storm Bridge",
+          "environment": "broken bridge over a deep ravine, lightning beyond the peaks, glowing summit beacon",
+          "objective": "Cross the storm bridge and reach the final realm",
+          "story": "The restored fragments reveal the route to the Heart, but a storm threatens the final crossing.",
+          "dialogue": [
+            {
+              "speaker": "Mira",
+              "line": "The bridge will not hold forever."
+            },
+            {
+              "speaker": "Rennie",
+              "line": "Then we cross for everyone who kept this secret safe."
+            }
+          ],
+          "musicCue": "storm_bridge",
+          "ambienceCue": "mountain_storm",
+          "sfxCues": [
+            "thunder_roll",
+            "bridge_creak"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chapter-4",
+      "number": 4,
+      "title": "The Heart of the Relic",
+      "theme": "ancient_sanctuary",
+      "storyArc": "Rennie reaches the source of the relic's power and chooses to protect the world rather than possess it.",
+      "scenes": [
+        {
+          "id": "ch4-sc1",
+          "number": 1,
+          "title": "The Hidden Sanctuary",
+          "environment": "overgrown sanctuary, luminous pools, giant roots around white stone pillars",
+          "objective": "Enter the sanctuary and find the heart-shards",
+          "story": "The last realm is quiet and beautiful, guarded by nature rather than armies.",
+          "dialogue": [
+            {
+              "speaker": "Mira",
+              "line": "This place feels alive."
+            },
+            {
+              "speaker": "Rennie",
+              "line": "Maybe it is waiting to see what we choose."
+            }
+          ],
+          "musicCue": "sanctuary_arrival",
+          "ambienceCue": "sanctuary_birds",
+          "sfxCues": [
+            "pool_ripple",
+            "relic_pulse"
+          ]
+        },
+        {
+          "id": "ch4-sc2",
+          "number": 2,
+          "title": "The Four Heart-Shards",
+          "environment": "circular chamber, four floating heart-shards, waterfalls and luminous vines",
+          "objective": "Find four heart-shards and restore the central seal",
+          "story": "The final fragments respond only when placed in balance, revealing the relic's true purpose.",
+          "dialogue": [
+            {
+              "speaker": "Mira",
+              "line": "It is not asking us to take it."
+            },
+            {
+              "speaker": "Rennie",
+              "line": "It is asking us to understand it."
+            }
+          ],
+          "musicCue": "heart_shards",
+          "ambienceCue": "luminous_chamber",
+          "sfxCues": [
+            "heart_shard",
+            "seal_harmony"
+          ]
+        },
+        {
+          "id": "ch4-sc3",
+          "number": 3,
+          "title": "The Heart's Trial",
+          "environment": "grand circular arena, floating stone rings, beams of teal light and drifting petals",
+          "objective": "Complete the guardian trial without losing the path",
+          "story": "The guardian tests Rennie's resolve. The relic answers compassion more strongly than force.",
+          "dialogue": [
+            {
+              "speaker": "Guardian Echo",
+              "line": "Will you claim the heart, even if the world must pay?"
+            },
+            {
+              "speaker": "Rennie",
+              "line": "No. A treasure that harms everyone belongs to no one."
+            }
+          ],
+          "musicCue": "heart_trial",
+          "ambienceCue": "arena_resonance",
+          "sfxCues": [
+            "trial_start",
+            "energy_wave",
+            "trial_complete"
+          ]
+        },
+        {
+          "id": "ch4-sc4",
+          "number": 4,
+          "title": "A Light Shared",
+          "environment": "sanctuary at sunrise, restored garden, petals in the air and a warm horizon",
+          "objective": "Return the relic to the sanctuary and complete the journey",
+          "story": "Rennie returns the relic to its resting place. Its light spreads across every realm, restoring what the journey touched.",
+          "dialogue": [
+            {
+              "speaker": "Mira",
+              "line": "You found the treasure."
+            },
+            {
+              "speaker": "Rennie",
+              "line": "We found something better. A reason to protect it."
+            }
+          ],
+          "musicCue": "ending_reunion",
+          "ambienceCue": "sunrise_garden",
+          "sfxCues": [
+            "relic_restored",
+            "credits_theme"
+          ]
+        }
+      ]
+    }
+  ]
+}
