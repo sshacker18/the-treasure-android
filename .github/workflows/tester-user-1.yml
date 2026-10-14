@@ -28,7 +28,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: tester-user-1-${{ github.ref }}
+  group: tester-user-1-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
