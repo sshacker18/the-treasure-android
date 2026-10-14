@@ -65,7 +65,7 @@ jobs:
           assert __import__("re").search(r'versionCode\s*=\s*([1-9]\d*)', gradle), "versionCode must be positive"
           assert "window.TREASURE_CAMPAIGN" in html, "Campaign manifest is not connected to the actual game runtime"
           assert "data-scene-id" in html or "sceneId" in html, "No scene identity/progression hook is wired into the game runtime"
-          assert "TREASURE_AUDIO_ENGINE" in html or "TREASURE_AUDIO_TRACKS" in html, "No audio runtime/track integration marker found"
+          assert "window.TREASURE_AUDIO_ENGINE" in html, "Scene audio cue engine is not integrated into the actual game runtime"
           print(f"Campaign content passed: 4 chapters, {len(scene_ids)} scenes; runtime integration markers present.")
           PY
 
