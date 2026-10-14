@@ -40,6 +40,46 @@ async function loadChapterForTest(page, chapterNumber) {
   return game;
 }
 
+
+test('production campaign is integrated as four linear chapters with four complete scenes each', async ({ page }) => {
+  await page.goto(gameFile);
+  const campaign = await page.evaluate(() => window.TREASURE_CAMPAIGN);
+  expect(campaign, 'campaign manifest must be loaded by the actual game runtime').toBeTruthy();
+  expect(campaign.progression).toMatchObject({ chapterCount: 4, scenesPerChapter: 4, linear: true });
+  expect(campaign.chapters).toHaveLength(4);
+  const sceneIds = [];
+  for (const [chapterIndex, chapter] of campaign.chapters.entries()) {
+    expect(chapter.number).toBe(chapterIndex + 1);
+    expect(chapter.scenes).toHaveLength(4);
+    for (const [sceneIndex, scene] of chapter.scenes.entries()) {
+      expect(scene.number).toBe(sceneIndex + 1);
+      expect(scene.id).toBeTruthy();
+      expect(scene.environment).toBeTruthy();
+      expect(scene.objective).toBeTruthy();
+      expect(scene.story).toBeTruthy();
+      expect(scene.dialogue.length).toBeGreaterThan(0);
+      expect(scene.dialogue.every(line => line.speaker && line.line)).toBeTruthy();
+      expect(scene.musicCue).toBeTruthy();
+      expect(scene.ambienceCue).toBeTruthy();
+      expect(scene.sfxCues.length).toBeGreaterThan(0);
+      sceneIds.push(scene.id);
+    }
+  }
+  expect(new Set(sceneIds).size).toBe(16);
+});
+
+test('the final application shows its first story scene when the adventure starts', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.goto(gameFile);
+  await page.getByRole('button', { name: 'START THE ADVENTURE' }).click();
+  await expect(page.locator('#intro')).toBeHidden();
+  await expect(page.locator('#storySceneOverlay')).toHaveAttribute('data-scene-id', 'ch1-sc1', { timeout: 15000 });
+  await expect(page.locator('#storySceneTitle')).toHaveText('The Forgotten Trail');
+  await expect(page.locator('#storySceneBeat')).toContainText('Emerald Wilds');
+  await expect(page.locator('#storySpeaker')).toHaveText('Rennie');
+  await expect(page.locator('#storyLine')).toContainText('map');
+});
+
 test('start screen teaches tap-to-move and automatic pickups', async ({ page }) => {
   await page.goto(gameFile);
   await expect(page.locator('#intro')).toContainText('Quick tutorial');
@@ -80,6 +120,8 @@ test('tapping a relic destination moves the player and auto-collects the relic',
   const game = await startAdventure(page);
   await game.locator('canvas#game').click({ position: { x: 310, y: 180 } });
   await expect(game.locator('#hud')).toContainText('RELICS 1/3', { timeout: 10000 });
+  await expect(page.locator('#storySceneOverlay')).toHaveAttribute('data-scene-id', 'ch1-sc2', { timeout: 5000 });
+  await expect(page.locator('#storySceneTitle')).toHaveText('The Three Lost Relics');
 });
 
 const objectiveByChapter = {
