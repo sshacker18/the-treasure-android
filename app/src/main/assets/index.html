@@ -56,6 +56,10 @@ body.playing #immersiveMenu{display:none!important}
 @media(max-height:440px){#chapterDrawer .drawer-card{padding:10px;gap:7px}#chapterDrawer button{padding:7px}}
 \n/* Tap-to-move mode: hide legacy directional pad and manual interact action. */\n#up,#down,#left,#right,#interact,#act,.pad{display:none!important}\n
 /* Production campaign narrative layer: unobtrusive, non-blocking, and consistent across chapters. */
+#sceneBackdrop{position:absolute;inset:0;z-index:6;display:none;opacity:0;pointer-events:none;overflow:hidden;transition:opacity .7s ease}
+#sceneBackdrop.show{display:block;opacity:1}
+#sceneBackdrop.fade{opacity:0}
+#sceneBackdrop svg{display:block;width:100%;height:100%;filter:saturate(1.05)}
 #storySceneOverlay{position:absolute;left:50%;bottom:clamp(64px,10vh,96px);transform:translateX(-50%) translateY(8px);z-index:7;width:min(560px,calc(100vw - 28px));display:none;pointer-events:none;opacity:0;transition:opacity .35s ease,transform .35s ease}
 #storySceneOverlay.show{display:block;opacity:1;transform:translateX(-50%) translateY(0)}
 #storySceneOverlay .story-card{border:1px solid rgba(231,189,114,.72);border-radius:14px;padding:12px 15px;background:linear-gradient(125deg,rgba(21,28,23,.94),rgba(12,13,12,.91));box-shadow:0 10px 36px rgba(0,0,0,.42);backdrop-filter:blur(8px)}
@@ -89,6 +93,7 @@ body.playing #immersiveMenu{display:none!important}
  <div id="transition" aria-live="polite"><div><div class="eyebrow">THE TREASURE · NEXT CHAPTER</div><h2 id="transitionTitle">THE JOURNEY CONTINUES</h2><p id="transitionText">The story moves forward…</p></div></div>
 <div id="postCredits" aria-live="polite" role="dialog" aria-modal="true" aria-label="Post-credits"><div class="credits-card"><div class="eyebrow">THE END IS ONLY THE BEGINNING</div><h2>THE TREASURE</h2><div class="credits-tag">POST-CREDITS</div><div class="credit-label">Game Director</div><div class="credit-name">Sahith</div><div class="credit-label">Developed By</div><div class="credit-name">Sahith &amp; ChatGPT</div><p>Thank you for joining the adventure.</p><button id="closePostCredits">PLAY AGAIN · CHAPTER 1</button></div></div>
  
+ <div id="sceneBackdrop" aria-hidden="true" data-scene-id=""></div>
  <div id="storySceneOverlay" aria-live="polite" role="status" aria-label="Story scene" data-scene-id="">
   <div class="story-card">
    <div id="storySceneEyebrow" class="story-eyebrow">THE TREASURE · STORY</div>
@@ -228,12 +233,67 @@ window.TREASURE_AUDIO_ENGINE = {
  },
  state(){return {musicCue:this.currentMusicCue,ambienceCue:this.currentAmbienceCue,enabled:shellMusicOn};}
 };
+function buildSceneArtwork(chapterNumber,sceneNumber){
+ const palettes={
+  1:{sky1:'#193b39',sky2:'#a7c98b',sun:'#f9d98b',far:'#4e8061',mid:'#2f6349',near:'#173d30',accent:'#9be6d0'},
+  2:{sky1:'#5b6b76',sky2:'#f5c878',sun:'#fff0b3',far:'#c88f52',mid:'#b57439',near:'#704a2d',accent:'#ffe39b'},
+  3:{sky1:'#1c3850',sky2:'#a4d4dc',sun:'#e7f5ee',far:'#7199b0',mid:'#476f8c',near:'#233f58',accent:'#a8f1e5'},
+  4:{sky1:'#172c35',sky2:'#e6b979',sun:'#fff0bd',far:'#5b9380',mid:'#367563',near:'#1c4a42',accent:'#9df4d7'}
+ };
+ const p=palettes[chapterNumber]||palettes[1];
+ const sunX=sceneNumber%2?78:83;
+ const horizon=chapterNumber===3?330:chapterNumber===2?350:320;
+ let foreground='';
+ if(chapterNumber===1){
+  foreground=sceneNumber===1
+   ?'<g fill="#173c2c"><path d="M0 0H115L92 260H0Z"/><path d="M900 0H1024V300H940Z"/><path d="M0 85Q120 10 230 95L170 135L75 130Z" fill="#477b4a"/><path d="M820 65Q925 0 1024 75V140L905 130Z" fill="#477b4a"/></g>'
+   :sceneNumber===2
+   ?'<g fill="#56765a"><circle cx="300" cy="405" r="35"/><circle cx="375" cy="395" r="24"/><circle cx="640" cy="400" r="30"/></g><g fill="#9be6d0" stroke="#d6fff4" stroke-width="3"><path d="M480 355l18 -30 18 30 -18 24Z"/><path d="M545 385l14 -24 14 24 -14 18Z"/><path d="M430 405l12 -20 12 20 -12 16Z"/></g>'
+   :sceneNumber===3
+   ?'<path d="M0 370Q190 330 350 390T700 370T1024 390V520H0Z" fill="#3a9bba"/><path d="M0 390Q180 365 350 410T700 390T1024 410" fill="none" stroke="#b4eff0" stroke-width="10"/><g stroke="#694d34" stroke-width="13" fill="none"><path d="M80 190L80 330M944 190L944 330M80 205Q500 110 944 205"/></g>'
+   :'<g fill="#6d4c37" stroke="#c9a675" stroke-width="9"><path d="M360 520V350Q512 180 664 350V520Z"/><path d="M385 520V360Q512 220 639 360V520Z" fill="#10211e"/></g><g fill="#a9f3dc"><circle cx="510" cy="380" r="12"/><circle cx="550" cy="400" r="7"/></g>';
+ } else if(chapterNumber===2){
+  foreground=sceneNumber===1
+   ?'<path d="M0 390Q150 280 300 390T620 390T1024 370V520H0Z" fill="#d7a45c"/><path d="M400 420V300L510 220L620 300V420Z" fill="#9c6338"/><path d="M440 420V315L510 270L580 315V420Z" fill="#4f3829"/>'
+   :sceneNumber===2
+   ?'<g stroke="#ffe39b" stroke-width="9" opacity=".85"><path d="M210 130L460 370"/><path d="M810 110L560 370"/><path d="M510 95V370"/></g><g fill="#9b6537"><rect x="380" y="320" width="42" height="130"/><rect x="600" y="320" width="42" height="130"/><path d="M355 320H667L640 285H382Z"/></g>'
+   :sceneNumber===3
+   ?'<g fill="#91603c" stroke="#d4a66b" stroke-width="8"><rect x="170" y="250" width="54" height="210"/><rect x="280" y="250" width="54" height="210"/><rect x="390" y="250" width="54" height="210"/><rect x="500" y="250" width="54" height="210"/><rect x="610" y="250" width="54" height="210"/><rect x="720" y="250" width="54" height="210"/><path d="M145 250H800L770 215H175Z"/></g>'
+   :'<g fill="#9a6339" stroke="#f0c27b" stroke-width="10"><path d="M340 500V310L512 205L684 310V500Z"/><path d="M415 500V340L512 280L609 340V500Z" fill="#17211e"/><circle cx="512" cy="375" r="28" fill="#ffe39b"/></g>';
+ } else if(chapterNumber===3){
+  foreground=sceneNumber===1
+   ?'<path d="M0 400L170 180L275 320L430 120L600 360L755 150L920 350L1024 220V520H0Z" fill="#476f8c"/><path d="M170 180L205 230L170 220L143 244Z M430 120L470 200L430 178L390 208Z M755 150L790 220L755 200L725 225Z" fill="#eff8f2"/>'
+   :sceneNumber===2
+   ?'<g fill="#77d7d1" stroke="#d7fff5" stroke-width="5"><path d="M330 470L365 250L410 470Z"/><path d="M440 470L500 180L560 470Z"/><path d="M600 470L640 285L680 470Z"/></g><g fill="#365d73"><circle cx="220" cy="410" r="42"/><circle cx="800" cy="420" r="48"/></g>'
+   :sceneNumber===3
+   ?'<g fill="none" stroke="#c5e7e9" stroke-width="8"><circle cx="512" cy="315" r="125"/><circle cx="512" cy="315" r="78"/><path d="M512 170V460M365 315H660M405 210L620 420M620 210L405 420"/></g><g fill="#e6f6ef"><circle cx="512" cy="315" r="18"/></g>'
+   :'<path d="M0 380L180 200L320 365L470 145L640 360L800 190L1024 380V520H0Z" fill="#476f8c"/><g stroke="#684a39" stroke-width="16" fill="none"><path d="M0 400Q260 260 510 385T1024 400"/><path d="M100 380V450M300 350V430M500 370V455M700 380V455M900 385V455"/></g>';
+ } else {
+  foreground=sceneNumber===1
+   ?'<g fill="#2a6356" stroke="#8ac9a3" stroke-width="8"><path d="M120 520V240Q180 120 240 240V520Z"/><path d="M780 520V220Q850 100 920 220V520Z"/></g><path d="M0 410Q180 365 340 420T690 410T1024 415V520H0Z" fill="#388b76"/>'
+   :sceneNumber===2
+   ?'<g fill="#9df4d7" stroke="#e4fff6" stroke-width="5"><path d="M350 470L390 300L430 470Z"/><path d="M470 470L512 220L554 470Z"/><path d="M590 470L630 310L670 470Z"/></g><ellipse cx="512" cy="455" rx="250" ry="35" fill="#6ce1c6" opacity=".35"/>'
+   :sceneNumber===3
+   ?'<g fill="none" stroke="#a9f5df" stroke-width="12" opacity=".9"><circle cx="512" cy="325" r="180"/><circle cx="512" cy="325" r="125"/><circle cx="512" cy="325" r="70"/></g><g fill="#f5d18a"><circle cx="512" cy="325" r="18"/><circle cx="512" cy="145" r="8"/><circle cx="668" cy="415" r="8"/><circle cx="356" cy="415" r="8"/></g>'
+   :'<path d="M0 400Q180 330 350 400T700 390T1024 390V520H0Z" fill="#5dbb93"/><g fill="#f5d18a" opacity=".9"><circle cx="140" cy="330" r="7"/><circle cx="260" cy="380" r="5"/><circle cx="790" cy="340" r="6"/><circle cx="900" cy="390" r="8"/></g><path d="M0 0H1024V95Q820 20 650 85T300 70T0 95Z" fill="#f3c87c" opacity=".3"/>';
+ }
+ return '<svg viewBox="0 0 1024 520" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Illustrated '+(window.TREASURE_CAMPAIGN.chapters[chapterNumber-1].scenes[sceneNumber-1].environment.replace(/&/g,'and'))+'"><defs><linearGradient id="sceneSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+p.sky1+'"/><stop offset="1" stop-color="'+p.sky2+'"/></linearGradient><radialGradient id="sceneGlow"><stop offset="0" stop-color="'+p.sun+'" stop-opacity=".95"/><stop offset="1" stop-color="'+p.sun+'" stop-opacity="0"/></radialGradient></defs><rect width="1024" height="520" fill="url(#sceneSky)"/><circle cx="'+(sunX*10)+'" cy="112" r="150" fill="url(#sceneGlow)"/><circle cx="'+(sunX*10)+'" cy="112" r="35" fill="'+p.sun+'" opacity=".88"/><path d="M0 '+horizon+'Q180 '+(horizon-130)+' 330 '+horizon+'T670 '+(horizon-25)+'T1024 '+horizon+'V520H0Z" fill="'+p.far+'"/><path d="M0 '+(horizon+45)+'Q220 '+(horizon-20)+' 410 '+(horizon+55)+'T760 '+(horizon+15)+'T1024 '+(horizon+35)+'V520H0Z" fill="'+p.mid+'"/>'+foreground+'<path d="M0 490Q180 460 350 495T700 485T1024 490V520H0Z" fill="'+p.near+'"/><g fill="'+p.accent+'" opacity=".75"><circle cx="125" cy="365" r="4"/><circle cx="240" cy="420" r="3"/><circle cx="840" cy="350" r="4"/><circle cx="910" cy="430" r="3"/></g></svg>';
+}
+
 function showCampaignScene(chapterNumber,sceneNumber){
  const campaign=window.TREASURE_CAMPAIGN;
  const chapter=campaign&&campaign.chapters.find(item=>item.number===chapterNumber);
  const scene=chapter&&chapter.scenes.find(item=>item.number===sceneNumber);
  if(!scene||sceneNumber<=campaignSceneShown)return;
  campaignSceneShown=sceneNumber;
+ const backdrop=document.getElementById('sceneBackdrop');
+ backdrop.dataset.sceneId=scene.id;
+ backdrop.innerHTML=buildSceneArtwork(chapterNumber,sceneNumber);
+ backdrop.classList.remove('fade');
+ backdrop.classList.add('show');
+ if(window.campaignBackdropTimer)clearTimeout(window.campaignBackdropTimer);
+ window.campaignBackdropTimer=setTimeout(()=>backdrop.classList.add('fade'),1500);
+ setTimeout(()=>{backdrop.classList.remove('show','fade');backdrop.innerHTML='';},2300);
  const overlay=document.getElementById('storySceneOverlay');
  overlay.dataset.sceneId=scene.id;
  overlay.setAttribute('data-scene-id',scene.id);
