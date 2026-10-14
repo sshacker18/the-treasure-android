@@ -1,6 +1,7 @@
 name: RELIC - Smoke and E2E QA
 
 on:
+  workflow_call:
   workflow_dispatch:
   push:
     branches:
