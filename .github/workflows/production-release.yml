@@ -1,0 +1,150 @@
+name: THE TREASURE - Production Candidate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "tests/**"
+      - "package.json"
+      - ".github/workflows/production-release.yml"
+      - ".github/workflows/tester-user-1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: treasure-production-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  tester-user-1:
+    name: Tester User 1 - Playwright MCP/E2E gate
+    uses: ./.github/workflows/tester-user-1.yml
+
+  campaign-contract:
+    name: Validate four-chapter / sixteen-scene campaign contract
+    runs-on: ubuntu-latest
+    needs: tester-user-1
+    steps:
+      - name: Checkout production candidate
+        uses: actions/checkout@v4
+      - name: Validate campaign manifest and runtime integration contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest_path = Path("app/src/main/assets/campaign-manifest.json")
+          html_path = Path("app/src/main/assets/index.html")
+          gradle_path = Path("app/build.gradle.kts")
+          manifest = json.loads(manifest_path.read_text())
+          html = html_path.read_text()
+          gradle = gradle_path.read_text()
+
+          chapters = manifest.get("chapters", [])
+          assert len(chapters) == 4, f"Expected 4 chapters; found {len(chapters)}"
+          scene_ids = []
+          for expected_chapter, chapter in enumerate(chapters, start=1):
+              assert chapter.get("number") == expected_chapter, f"Chapter order mismatch at {expected_chapter}"
+              scenes = chapter.get("scenes", [])
+              assert len(scenes) == 4, f"{chapter.get('id')} must contain exactly 4 scenes"
+              for expected_scene, scene in enumerate(scenes, start=1):
+                  assert scene.get("number") == expected_scene, f"Scene order mismatch in {chapter.get('id')}"
+                  assert scene.get("id") and scene.get("title") and scene.get("environment"), "Scene identity/scenery missing"
+                  assert scene.get("objective") and scene.get("story"), f"Story/objective missing for {scene.get('id')}"
+                  assert scene.get("dialogue") and all(d.get("speaker") and d.get("line") for d in scene["dialogue"]), f"Dialogue missing for {scene.get('id')}"
+                  assert scene.get("musicCue") and scene.get("ambienceCue") and scene.get("sfxCues"), f"Audio cue contract missing for {scene.get('id')}"
+                  scene_ids.append(scene["id"])
+          assert len(scene_ids) == len(set(scene_ids)) == 16, "Scene IDs must be unique across the campaign"
+          assert manifest.get("progression", {}).get("linear") is True, "Campaign must enforce linear progression"
+          assert 'applicationId = "com.thetreasure.game"' in gradle, "Application ID must remain stable for in-place updates"
+          assert re_version := __import__("re").search(r'versionCode\\s*=\\s*([1-9]\\d*)', gradle), "versionCode must be positive"
+          assert "window.TREASURE_CAMPAIGN" in html, "Campaign manifest is not connected to the actual game runtime"
+          assert "data-scene-id" in html or "sceneId" in html, "No scene identity/progression hook is wired into the game runtime"
+          assert "TREASURE_AUDIO_ENGINE" in html or "TREASURE_AUDIO_TRACKS" in html, "No audio runtime/track integration marker found"
+          print(f"Campaign content passed: 4 chapters, {len(scene_ids)} scenes; runtime integration markers present.")
+          PY
+
+  production-build:
+    name: Build and verify signed THE-TREASURE APK + AAB
+    runs-on: ubuntu-latest
+    needs: campaign-contract
+    timeout-minutes: 30
+    steps:
+      - name: Checkout validated production candidate
+        uses: actions/checkout@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platforms;android-36 build-tools;36.0.0"
+          accept-android-sdk-licenses: true
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      - name: Require production signing secrets
+        env:
+          PLAY_UPLOAD_KEYSTORE_BASE64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
+          PLAY_UPLOAD_STORE_PASSWORD: ${{ secrets.PLAY_UPLOAD_STORE_PASSWORD }}
+          PLAY_UPLOAD_KEY_ALIAS: ${{ secrets.PLAY_UPLOAD_KEY_ALIAS }}
+          PLAY_UPLOAD_KEY_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in PLAY_UPLOAD_KEYSTORE_BASE64 PLAY_UPLOAD_STORE_PASSWORD PLAY_UPLOAD_KEY_ALIAS PLAY_UPLOAD_KEY_PASSWORD; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::Missing required production signing secret: $name"
+              exit 1
+            fi
+          done
+          mkdir -p "$RUNNER_TEMP/treasure-signing"
+          printf '%s' "$PLAY_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/treasure-signing/upload-key.jks"
+          test -s "$RUNNER_TEMP/treasure-signing/upload-key.jks"
+          echo "PLAY_UPLOAD_KEYSTORE_PATH=$RUNNER_TEMP/treasure-signing/upload-key.jks" >> "$GITHUB_ENV"
+          echo "PLAY_UPLOAD_STORE_PASSWORD=$PLAY_UPLOAD_STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "PLAY_UPLOAD_KEY_ALIAS=$PLAY_UPLOAD_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "PLAY_UPLOAD_KEY_PASSWORD=$PLAY_UPLOAD_KEY_PASSWORD" >> "$GITHUB_ENV"
+      - name: Build signed Android APK and App Bundle
+        run: gradle assembleRelease bundleRelease testDebugUnitTest --no-daemon
+      - name: Verify signed outputs and prepare user-friendly names
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/36.0.0"
+          APK="app/build/outputs/apk/release/app-release.apk"
+          AAB="app/build/outputs/bundle/release/app-release.aab"
+          test -s "$APK" || { echo "::error::Signed APK output missing"; exit 1; }
+          test -s "$AAB" || { echo "::error::Signed AAB output missing"; exit 1; }
+          "$BUILD_TOOLS/apksigner" verify --verbose "$APK"
+          jarsigner -verify "$AAB"
+          mkdir -p production-output
+          cp "$APK" production-output/THE-TREASURE.apk
+          cp "$AAB" production-output/THE-TREASURE.aab
+          sha256sum production-output/THE-TREASURE.apk production-output/THE-TREASURE.aab > production-output/SHA256SUMS.txt
+          {
+            echo "app_name=THE TREASURE"
+            grep -E 'applicationId =|versionCode =|versionName =' app/build.gradle.kts | sed 's/^/android_config=/'
+            echo "commit=$GITHUB_SHA"
+            echo "run_id=$GITHUB_RUN_ID"
+            cat production-output/SHA256SUMS.txt
+          } > production-output/PRODUCTION-MANIFEST.txt
+          cat production-output/PRODUCTION-MANIFEST.txt
+      - name: Upload signed production outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: THE-TREASURE-production-release
+          path: |
+            production-output/THE-TREASURE.apk
+            production-output/THE-TREASURE.aab
+            production-output/SHA256SUMS.txt
+            production-output/PRODUCTION-MANIFEST.txt
+          if-no-files-found: error
+          retention-days: 30
