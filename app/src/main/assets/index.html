@@ -61,6 +61,7 @@ body.playing #immersiveMenu{display:none!important}
 #storySceneOverlay .story-card{border:1px solid rgba(231,189,114,.72);border-radius:14px;padding:12px 15px;background:linear-gradient(125deg,rgba(21,28,23,.94),rgba(12,13,12,.91));box-shadow:0 10px 36px rgba(0,0,0,.42);backdrop-filter:blur(8px)}
 #storySceneOverlay .story-eyebrow{font-size:9px;letter-spacing:.2em;color:#e7bd72;text-transform:uppercase}
 #storySceneOverlay h2{font-size:clamp(15px,3vw,20px);line-height:1.15;margin:5px 0;color:#fff0d0}
+#storySceneOverlay .story-environment{font-size:9px;line-height:1.35;color:#b8c9b4;letter-spacing:.03em;margin:2px 0 5px}
 #storySceneOverlay .story-beat{font-size:clamp(11px,2.1vw,13px);line-height:1.45;color:#e2d8c6;margin:5px 0 8px}
 #storySceneOverlay .story-dialogue{border-left:2px solid #e7bd72;padding-left:9px;display:grid;gap:3px}
 #storySceneOverlay #storySpeaker{font-size:10px;font-weight:800;color:#f1ce87;letter-spacing:.08em}
@@ -92,6 +93,7 @@ body.playing #immersiveMenu{display:none!important}
   <div class="story-card">
    <div id="storySceneEyebrow" class="story-eyebrow">THE TREASURE · STORY</div>
    <h2 id="storySceneTitle">The Forgotten Trail</h2>
+   <p id="storySceneEnvironment" class="story-environment"></p>
    <p id="storySceneBeat" class="story-beat"></p>
    <div class="story-dialogue"><strong id="storySpeaker"></strong><span id="storyLine"></span></div>
   </div>
@@ -136,7 +138,7 @@ const loading=document.getElementById('loading');
 const intro=document.getElementById('intro');
 window.TREASURE_AUDIO_TRACKS = window.TREASURE_AUDIO_TRACKS || [];
 let current=0, launched=false;
-let campaignSceneTimer=null,campaignObserver=null,campaignSceneShown=0,campaignLastObjective=0;
+let campaignSceneTimer=null,campaignDialogueTimer=null,campaignObserver=null,campaignSceneShown=0,campaignLastObjective=0;
 let chromeHideTimer=null;
 let shellAudioContext=null,shellTrackAudio=null,shellMusicTimer=null,shellMusicOn=false,shellMusicStep=0;
 const shellMelodies=[
@@ -219,18 +221,29 @@ function showCampaignScene(chapterNumber,sceneNumber){
  document.getElementById('storySceneEyebrow').textContent=chapter.title+' · SCENE '+scene.number+' OF 4';
  document.getElementById('storySceneTitle').textContent=scene.title;
  document.getElementById('storySceneBeat').textContent=scene.story;
- const dialogue=scene.dialogue[0]||{speaker:'Narrator',line:scene.story};
- document.getElementById('storySpeaker').textContent=dialogue.speaker;
- document.getElementById('storyLine').textContent=dialogue.line;
+ document.getElementById('storySceneEnvironment').textContent=scene.environment;
+ const dialogueLines=scene.dialogue.length?scene.dialogue:[{speaker:'Narrator',line:scene.story}];
+ let dialogueIndex=0;
+ const renderDialogue=()=>{
+  const dialogue=dialogueLines[dialogueIndex];
+  document.getElementById('storySpeaker').textContent=dialogue.speaker;
+  document.getElementById('storyLine').textContent=dialogue.line;
+  dialogueIndex++;
+  if(dialogueIndex<dialogueLines.length)campaignDialogueTimer=setTimeout(renderDialogue,2500);
+ };
+ if(campaignDialogueTimer)clearTimeout(campaignDialogueTimer);
+ renderDialogue();
  overlay.dataset.musicCue=scene.musicCue;
  overlay.dataset.ambienceCue=scene.ambienceCue;
- window.dispatchEvent(new CustomEvent('treasure-scene-change',{detail:{chapter:chapterNumber,scene:sceneNumber,id:scene.id,musicCue:scene.musicCue,ambienceCue:scene.ambienceCue}}));
+ overlay.dataset.sfxCues=scene.sfxCues.join(',');
+ window.dispatchEvent(new CustomEvent('treasure-scene-change',{detail:{chapter:chapterNumber,scene:sceneNumber,id:scene.id,musicCue:scene.musicCue,ambienceCue:scene.ambienceCue,sfxCues:scene.sfxCues}}));
  overlay.classList.add('show');
  if(campaignSceneTimer)clearTimeout(campaignSceneTimer);
- campaignSceneTimer=setTimeout(()=>overlay.classList.remove('show'),6500);
+ campaignSceneTimer=setTimeout(()=>overlay.classList.remove('show'),Math.max(6500,dialogueLines.length*2500+500));
  if(shellMusicOn&&shellAudioContext&&shellAudioContext.state==='running'){
-  shellTone(440+chapterNumber*22,.22,.035,'sine',0);
-  shellTone(554+sceneNumber*18,.32,.026,'sine',.13);
+  shellTone(392+chapterNumber*22,.22,.035,'sine',0);
+  shellTone(494+sceneNumber*18,.32,.026,'sine',.13);
+  shellTone(587+chapterNumber*14,.24,.02,'triangle',.3);
  }
 }
 function installCampaignSceneObserver(){
