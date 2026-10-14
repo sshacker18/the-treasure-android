@@ -247,7 +247,8 @@ test('post-credits replay returns to Chapter 1 instead of leaving the ending ove
     // Send the event from inside the iframe to the wrapper, matching the real game.
     parent.postMessage({ type: 'post-credits' }, '*');
   });
-  await expect(page.locator('#postCredits')).toHaveClass(/show/);
+  await expect(page.locator('#storySceneOverlay')).toHaveAttribute('data-scene-id', 'ch4-sc4', { timeout: 5000 });
+  await expect(page.locator('#postCredits')).toHaveClass(/show/, { timeout: 10000 });
   await expect(page.getByRole('button', { name: /PLAY AGAIN.*CHAPTER 1/i })).toBeVisible();
   await page.getByRole('button', { name: /PLAY AGAIN.*CHAPTER 1/i }).click();
   await expect(page.locator('#postCredits')).not.toHaveClass(/show/);
