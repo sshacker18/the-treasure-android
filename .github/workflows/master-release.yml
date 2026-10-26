@@ -57,7 +57,7 @@ jobs:
     uses: ./.github/workflows/build-apk.yml
 
   signed-release:
-    name: Gate 3 - Sign release APK
+    name: Gate 3 - Sign release APK with Play upload key
     needs:
       - gameplay-qa
       - android-build
@@ -89,7 +89,7 @@ jobs:
             echo
             if [ "${QA_RESULT}" = "success" ] && [ "${BUILD_RESULT}" = "success" ] && [ "${SIGN_RESULT}" = "success" ]; then
               echo "### Release result: PASS"
-              echo "The signed APK is available as `THE-TREASURE-signed-APK`."
+              echo "The Play upload-key-signed APK is available as `RELIC-internal-testing-signed-APK`."
             else
               echo "### Release result: BLOCKED"
               echo "No release is approved. Open the failed gate above and fix it before retrying."
