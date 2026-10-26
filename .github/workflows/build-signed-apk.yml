@@ -1,28 +1,31 @@
-name: RELIC - Play Upload-Signed APK Pipeline
+name: RELIC - Play Upload-Key APK and Internal Testing
 
 on:
   workflow_call:
     secrets:
-      PLAY_UPLOAD_KEYSTORE_BASE64:
+      ANDROID_KEYSTORE_BASE64:
         required: true
-      PLAY_UPLOAD_STORE_PASSWORD:
+      ANDROID_KEYSTORE_PASSWORD:
         required: true
-      PLAY_UPLOAD_KEY_ALIAS:
+      ANDROID_KEY_ALIAS:
         required: true
-      PLAY_UPLOAD_KEY_PASSWORD:
+      ANDROID_KEY_PASSWORD:
         required: true
+      GOOGLE_PLAY_SERVICE_ACCOUNT_JSON:
+        required: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: relic-play-signed-apk-${{ github.ref }}
+  group: relic-play-internal-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build-sign-upload:
-    name: Build, sign, and upload Play-signed APK
+    name: Build, sign, verify, and publish Relic APK
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,25 +37,35 @@ jobs:
           java-version: "17"
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
-          packages: "platforms;android-35 platforms;android-36 build-tools;36.0.0"
-          accept-android-sdk-licenses: true
+          cmdline-tools-version: "latest"
+          packages: "platform-tools"
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager --install "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+          set +o pipefail
+          yes | sdkmanager --licenses >/dev/null
+          set -o pipefail
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.11.1"
 
-      - name: Validate Play upload-key secrets and project
+      - name: Check required signing secrets
+        shell: bash
         env:
-          PLAY_UPLOAD_KEYSTORE_BASE64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
-          PLAY_UPLOAD_STORE_PASSWORD: ${{ secrets.PLAY_UPLOAD_STORE_PASSWORD }}
-          PLAY_UPLOAD_KEY_ALIAS: ${{ secrets.PLAY_UPLOAD_KEY_ALIAS }}
-          PLAY_UPLOAD_KEY_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          for name in PLAY_UPLOAD_KEYSTORE_BASE64 PLAY_UPLOAD_STORE_PASSWORD PLAY_UPLOAD_KEY_ALIAS PLAY_UPLOAD_KEY_PASSWORD; do
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
             if [ -z "${!name:-}" ]; then
               echo "::error::Missing GitHub Actions secret: ${name}"
               exit 1
@@ -61,21 +74,76 @@ jobs:
           test -f app/build.gradle.kts
           test -f app/src/main/assets/index.html
           test -f app/src/main/AndroidManifest.xml
+          grep -q 'applicationId = "com.thetreasure.game"' app/build.gradle.kts
 
-      - name: Build and verify the signed internal-testing APK
+      - name: Decode and validate the existing upload keystore
+        shell: bash
         env:
-          PLAY_UPLOAD_KEYSTORE_BASE64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
-          PLAY_UPLOAD_STORE_PASSWORD: ${{ secrets.PLAY_UPLOAD_STORE_PASSWORD }}
-          PLAY_UPLOAD_KEY_ALIAS: ${{ secrets.PLAY_UPLOAD_KEY_ALIAS }}
-          PLAY_UPLOAD_KEY_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
           set -euo pipefail
-          KEYSTORE_PATH="$RUNNER_TEMP/play-upload-keystore.jks"
-          printf '%s' "$PLAY_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
-          test -s "$KEYSTORE_PATH"
-          export PLAY_UPLOAD_KEYSTORE_PATH="$KEYSTORE_PATH"
+          umask 077
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/relic-upload.jks"
+          test -s "$RUNNER_TEMP/relic-upload.jks"
+          keytool -list -keystore "$RUNNER_TEMP/relic-upload.jks"             -storepass "$ANDROID_KEYSTORE_PASSWORD"             -alias "$ANDROID_KEY_ALIAS" >/dev/null
 
-          gradle assembleRelease --no-daemon
+      - name: Validate private-key password before build
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/VerifySigningKey.java" <<'JAVA'
+          import java.io.File;
+          import java.security.Key;
+          import java.security.KeyStore;
+          import java.security.PrivateKey;
+
+          public class VerifySigningKey {
+              public static void main(String[] args) {
+                  try {
+                      char[] storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD").toCharArray();
+                      char[] keyPassword = System.getenv("ANDROID_KEY_PASSWORD").toCharArray();
+                      String alias = System.getenv("ANDROID_KEY_ALIAS");
+                      KeyStore store = KeyStore.getInstance(
+                          new File(System.getenv("RUNNER_TEMP") + "/relic-upload.jks"),
+                          storePassword
+                      );
+                      Key key = store.getKey(alias, keyPassword);
+                      if (!(key instanceof PrivateKey)) {
+                          throw new IllegalStateException("Configured alias does not resolve to a private key");
+                      }
+                      System.out.println("Private-key password verified for configured alias.");
+                  } catch (Exception e) {
+                      System.err.println("Signing-key preflight failed; verify the configured store password, alias, and private-key password.");
+                      System.exit(21);
+                  }
+              }
+          }
+          JAVA
+          if ! java "$RUNNER_TEMP/VerifySigningKey.java"; then
+            echo "::error::The Android upload keystore could not be unlocked with the configured alias/passwords. Keep credentials in GitHub Actions secrets; do not paste them into logs or chat."
+            exit 1
+          fi
+
+      - name: Build signed release APK
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          export PLAY_UPLOAD_KEYSTORE_PATH="$RUNNER_TEMP/relic-upload.jks"
+          export PLAY_UPLOAD_STORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD"
+          export PLAY_UPLOAD_KEY_ALIAS="$ANDROID_KEY_ALIAS"
+          export PLAY_UPLOAD_KEY_PASSWORD="$ANDROID_KEY_PASSWORD"
+
+          gradle --no-daemon --stacktrace assembleRelease
           APK="app/build/outputs/apk/release/app-release.apk"
           test -s "$APK"
 
@@ -83,19 +151,63 @@ jobs:
           "$BUILD_TOOLS/zipalign" -c -v 4 "$APK"
           "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$APK"
 
-          OUT="$RUNNER_TEMP/relic-release"
-          mkdir -p "$OUT"
-          cp "$APK" "$OUT/RELIC-internal-testing.apk"
-          sha256sum "$OUT/RELIC-internal-testing.apk" > "$OUT/SHA256SUMS.txt"
+          mkdir -p release-output
+          cp "$APK" release-output/RELIC-internal-testing.apk
+          sha256sum release-output/RELIC-internal-testing.apk > release-output/SHA256SUMS.txt
 
-          unset PLAY_UPLOAD_KEYSTORE_BASE64 PLAY_UPLOAD_STORE_PASSWORD PLAY_UPLOAD_KEY_ALIAS PLAY_UPLOAD_KEY_PASSWORD PLAY_UPLOAD_KEYSTORE_PATH
+          unset PLAY_UPLOAD_KEYSTORE_PATH PLAY_UPLOAD_STORE_PASSWORD PLAY_UPLOAD_KEY_ALIAS PLAY_UPLOAD_KEY_PASSWORD
 
-      - name: Upload signed APK and checksum
+      - name: Upload signed APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: RELIC-internal-testing-signed-APK
-          path: |
-            ${{ runner.temp }}/relic-release/RELIC-internal-testing.apk
-            ${{ runner.temp }}/relic-release/SHA256SUMS.txt
+          path: release-output/
           if-no-files-found: error
           retention-days: 14
+
+      - name: Check Google Play publishing credentials
+        id: play-creds
+        shell: bash
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -n "${PLAY_SERVICE_ACCOUNT_JSON:-}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload signed APK to Google Play internal testing
+        if: ${{ steps.play-creds.outputs.configured == 'true' && github.ref == 'refs/heads/main' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.thetreasure.game
+          releaseFiles: release-output/RELIC-internal-testing.apk
+          track: internal
+          status: completed
+          releaseName: "RELIC CI #${{ github.run_number }}"
+
+      - name: Explain Play upload was skipped
+        if: ${{ steps.play-creds.outputs.configured != 'true' }}
+        shell: bash
+        run: |
+          echo "::warning::Signed APK built, but Google Play upload was skipped because GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is not available to this repository workflow."
+          {
+            echo "## Google Play internal testing"
+            echo "**Upload skipped:** add/authorize repository secret `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` for this repository. Signed APK remains available as an artifact."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Hold Play upload outside main
+        if: ${{ steps.play-creds.outputs.configured == 'true' && github.ref != 'refs/heads/main' }}
+        shell: bash
+        run: |
+          {
+            echo "## Google Play internal testing"
+            echo "**Upload held:** this run is not on main. The main-branch run will publish the integrated commit to the internal track."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove signing material
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/relic-upload.jks" "$RUNNER_TEMP/VerifySigningKey.java"
